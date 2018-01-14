@@ -1,21 +1,3 @@
-"""TODO LIST
-
-validate other_chains in find_new_chains(): they must be a well created chains,
-this prevent attacks that attemp to completly change the blockchain history
-
-stop proof_of_work() if someonelse already got it: doing some research about it
-
-improve proof_of_work() algorithm: make is harder to guess
-
-add PEER_NODES dinamically
-
-create wallet generator and user client
-
-add POST and GET request in this script
-
-verify transactions to avoid no funds or duplicate sent
-
-"""
 import datetime as date
 import hashlib as hasher
 import json
@@ -24,21 +6,6 @@ from flask import Flask
 from flask import request
 
 node = Flask(__name__)
-
-# Write your generated adress here. All coins mined will go to this address
-MINER_ADDRESS = "q3nf394hjg-random-miner-address-34nf3i4nflkn3oi"
-
-# Node's blockchain copy
-BLOCKCHAIN = []
-BLOCKCHAIN.append(create_genesis_block())
-
-# Store the url data of every other node in the network
-# so that we can communicate with them
-PEER_NODES = []
-
-# Store the transactions that this node has in a list
-NODE_PENDING_TRANSACTIONS = []
-
 
 
 class Block:
@@ -88,6 +55,22 @@ def next_block(last_block):
     this_data = "Hey! I'm block " + str(this_index)
     this_hash = last_block.hash
     return Block(this_index, this_timestamp, this_data, this_hash)
+
+
+
+# Write your generated adress here. All coins mined will go to this address
+MINER_ADDRESS = "q3nf394hjg-random-miner-address-34nf3i4nflkn3oi"
+
+# Node's blockchain copy
+BLOCKCHAIN = []
+BLOCKCHAIN.append(create_genesis_block())
+
+# Store the url data of every other node in the network
+# so that we can communicate with them
+PEER_NODES = []
+
+# Store the transactions that this node has in a list
+NODE_PENDING_TRANSACTIONS = []
 
 
 @node.route('/txion', methods=['POST'])
