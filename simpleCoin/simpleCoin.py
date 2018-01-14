@@ -50,15 +50,6 @@ def create_genesis_block():
          "0")
 
 
-def next_block(last_block):
-    """Creates next block"""
-    this_index = last_block.index + 1
-    this_timestamp = date.datetime.now()
-    this_data = "Hey! I'm block " + str(this_index)
-    this_hash = last_block.hash
-    return Block(this_index, this_timestamp, this_data, this_hash)
-
-
 # Node's blockchain copy
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
@@ -125,17 +116,12 @@ def mine():
     "transactions": list(NODE_PENDING_TRANSACTIONS)
     }
     new_block_index = last_block.index + 1
-    new_block_timestamp = this_timestamp = date.datetime.now()
+    new_block_timestamp = date.datetime.now()
     last_block_hash = last_block.hash
     # Empty transaction list
     NODE_PENDING_TRANSACTIONS[:] = []
     # Now create the new block
-    mined_block = Block(
-    new_block_index,
-    new_block_timestamp,
-    new_block_data,
-    last_block_hash
-    )
+    mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
     BLOCKCHAIN.append(mined_block)
     # Let the client know this node mined a block
     return json.dumps({
