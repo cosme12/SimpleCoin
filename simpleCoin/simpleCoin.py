@@ -5,6 +5,8 @@ import requests
 from flask import Flask
 from flask import request
 
+from miner_config import MINER_ADDRESS, PEER_NODES
+
 node = Flask(__name__)
 
 
@@ -57,17 +59,9 @@ def next_block(last_block):
     return Block(this_index, this_timestamp, this_data, this_hash)
 
 
-
-# Write your generated adress here. All coins mined will go to this address
-MINER_ADDRESS = "q3nf394hjg-random-miner-address-34nf3i4nflkn3oi"
-
 # Node's blockchain copy
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
-
-# Store the url data of every other node in the network
-# so that we can communicate with them
-PEER_NODES = []
 
 # Store the transactions that this node has in a list
 NODE_PENDING_TRANSACTIONS = []
