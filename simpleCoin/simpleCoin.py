@@ -1,4 +1,4 @@
-import datetime as date
+import time
 import hashlib as hasher
 import json
 import requests
@@ -46,7 +46,7 @@ def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
-    return Block(0, date.datetime.now(), 
+    return Block(0, time.time(), 
         {"proof-of-work": 9,"transactions": None},
          "0")
 
@@ -118,7 +118,7 @@ def mine():
         "transactions": list(NODE_PENDING_TRANSACTIONS)
         }
         new_block_index = last_block.index + 1
-        new_block_timestamp = date.datetime.now()
+        new_block_timestamp = time.time()
         last_block_hash = last_block.hash
         # Empty transaction list
         NODE_PENDING_TRANSACTIONS[:] = []
