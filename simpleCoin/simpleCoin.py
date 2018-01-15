@@ -4,6 +4,7 @@ import json
 import requests
 from flask import Flask
 from flask import request
+from multiprocessing import Process
 
 from miner_config import MINER_ADDRESS, PEER_NODES
 
@@ -85,51 +86,53 @@ def proof_of_work(last_proof):
   incrementor = last_proof + 1
   # Keep incrementing the incrementor until it's equal to a number divisible by 9
   # and the proof of work of the previous block in the chain
-  while not (incrementor % 9 == 0 and incrementor % last_proof == 0):
+  while not (incrementor % 7919 == 0 and incrementor % last_proof == 0):
     incrementor += 1
   # Once that number is found, we can return it as a proof of our work
   return incrementor
 
 
-@node.route('/mine', methods = ['GET'])
 def mine():
-    """Mining is the only way that new coins can be created.
-    In order to prevent to many coins to be created, the process
-    is slowed down by a proof of work algorithm.
-    """
-    # Get the last proof of work
-    last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-    last_proof = last_block.data['proof-of-work']
-    # Find the proof of work for the current block being mined
-    # Note: The program will hang here until a new proof of work is found
-    proof = proof_of_work(last_proof)
-    # Once we find a valid proof of work, we know we can mine a block so 
-    # we reward the miner by adding a transaction
-    NODE_PENDING_TRANSACTIONS.append(
-    { "from": "network",
-      "to": MINER_ADDRESS,
-      "amount": 1 }
-    )
-    # Now we can gather the data needed to create the new block
-    new_block_data = {
-    "proof-of-work": proof,
-    "transactions": list(NODE_PENDING_TRANSACTIONS)
-    }
-    new_block_index = last_block.index + 1
-    new_block_timestamp = date.datetime.now()
-    last_block_hash = last_block.hash
-    # Empty transaction list
-    NODE_PENDING_TRANSACTIONS[:] = []
-    # Now create the new block
-    mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
-    BLOCKCHAIN.append(mined_block)
-    # Let the client know this node mined a block
-    return json.dumps({
-      "index": new_block_index,
-      "timestamp": str(new_block_timestamp),
-      "data": new_block_data,
-      "hash": last_block_hash
-    }) + "\n"
+    while True:
+        #print("start mining")
+        """Mining is the only way that new coins can be created.
+        In order to prevent to many coins to be created, the process
+        is slowed down by a proof of work algorithm.
+        """
+        # Get the last proof of work
+        last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
+        last_proof = last_block.data['proof-of-work']
+        # Find the proof of work for the current block being mined
+        # Note: The program will hang here until a new proof of work is found
+        proof = proof_of_work(last_proof)
+        # Once we find a valid proof of work, we know we can mine a block so 
+        # we reward the miner by adding a transaction
+        NODE_PENDING_TRANSACTIONS.append(
+        { "from": "network",
+          "to": MINER_ADDRESS,
+          "amount": 1 }
+        )
+        # Now we can gather the data needed to create the new block
+        new_block_data = {
+        "proof-of-work": proof,
+        "transactions": list(NODE_PENDING_TRANSACTIONS)
+        }
+        new_block_index = last_block.index + 1
+        new_block_timestamp = date.datetime.now()
+        last_block_hash = last_block.hash
+        # Empty transaction list
+        NODE_PENDING_TRANSACTIONS[:] = []
+        # Now create the new block
+        mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
+        BLOCKCHAIN.append(mined_block)
+        # Let the client know this node mined a block
+        #print("end mined")
+        return json.dumps({
+          "index": new_block_index,
+          "timestamp": str(new_block_timestamp),
+          "data": new_block_data,
+          "hash": last_block_hash
+        }) + "\n"
 
 
 @node.route('/blocks', methods=['GET'])
@@ -176,4 +179,11 @@ def consensus():
     BLOCKCHAIN = longest_chain
 
 
-node.run()
+
+if __name__ == '__main__':
+    #Start mining
+    p1 = Process(target = mine)
+    p1.start()
+    #Start server to recieve transactions
+    p2 = Process(target = node.run())
+    p2.start()
