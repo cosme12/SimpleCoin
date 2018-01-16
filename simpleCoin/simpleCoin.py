@@ -4,7 +4,7 @@ import json
 import requests
 from flask import Flask
 from flask import request
-from multiprocessing import Process
+from multiprocessing import Process, Pipe
 
 from miner_config import MINER_ADDRESS, PEER_NODES
 
@@ -81,7 +81,7 @@ def proof_of_work(last_proof,blockchain):
   return (incrementor,blockchain)
 
 
-def mine(blockchain,node_pending_transactions):
+def mine(a,blockchain,node_pending_transactions):
     BLOCKCHAIN = blockchain
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
@@ -100,7 +100,7 @@ def mine(blockchain,node_pending_transactions):
         if proof[0] == False:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
-            save_to_file(0,BLOCKCHAIN)
+            a.send(BLOCKCHAIN)
             continue
         else:
             # Once we find a valid proof of work, we know we can mine a block so 
@@ -131,7 +131,7 @@ def mine(blockchain,node_pending_transactions):
               "data": new_block_data,
               "hash": last_block_hash
             }) + "\n")
-            #save_to_file(0,BLOCKCHAIN)
+            a.send(BLOCKCHAIN)
 
 
 def find_new_chains():
@@ -164,29 +164,14 @@ def consensus(blockchain):
         BLOCKCHAIN = longest_chain
         return BLOCKCHAIN
 
-'''
-def save_to_file(mode,data):
-    """Use mode == 0 to save blockchain
-    Use mode == 1 to save pending transactions"""
-    if mode == 0:
-        print(data)
-        with open("BLOCKCHAIN.json", "w") as file:
-            json.dump(data,file)
-    if mode == 1:
-        with open("PENDING_TXION.txt", "w") as file:
-            text_file.write(data)
 
-def read_file():
-    """Read current blockchain"""
-    with open("BLOCKCHAIN.json", "w") as file:
-        return(json.loads(file.read()))
-'''
 
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
     # Load current blockchain
     #chain_to_send = read_file()
-    chain_to_send = BLOCKCHAIN
+    #chain_to_send = BLOCKCHAIN
+    chain_to_send = b.recv()
     # Convert our blocks into dictionaries
     # so we can send them as json objects later
     chain_to_send_json = []
@@ -199,7 +184,6 @@ def get_blocks():
         }
         chain_to_send_json.append(block)
 
-    print(chain_to_send)
     # Send our chain to whomever requested it
     chain_to_send = json.dumps(chain_to_send_json)
     return chain_to_send
@@ -230,8 +214,9 @@ def transaction():
 
 if __name__ == '__main__':
     #Start mining
-    p1 = Process(target = mine(BLOCKCHAIN,NODE_PENDING_TRANSACTIONS))
+    a,b=Pipe()
+    p1 = Process(target = mine, args=(a,BLOCKCHAIN,NODE_PENDING_TRANSACTIONS))
     p1.start()
     #Start server to recieve transactions
-    p2 = Process(target = node.run())
+    p2 = Process(target = node.run(), args=b)
     p2.start()
