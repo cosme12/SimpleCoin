@@ -12,6 +12,21 @@ Taking a look at the [Bitcoin organization wiki website](https://en.bitcoin.it/w
 
 You can find more information in the original [Bitcoin Paper](https://bitcoin.org/bitcoin.pdf).
 
+## How this code work?
+
+There are 2 main scripts:
+
+- ```miner.py```
+- ```wallet.py```
+
+### Miner.py
+
+This file is probably the most import. Running it will create a node (like a server). From here you can connet to the blockchain and process transaction (that other users send) by mining. As a reward for this work, you recieve some coins. The more nodes exist, the more secure the blockchain gets.
+
+### Wallet.py
+
+This file is for those that don't want to be a node but simple users. Running this file allows you to generate a new address, send coins and check your transaction history.
+
 ## Contribution
 Anybody is welcome to collaborate in this project. Feel free to push any pull request (even if you are new to coding).
 
