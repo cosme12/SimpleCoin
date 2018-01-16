@@ -6,7 +6,7 @@ from flask import Flask
 from flask import request
 from multiprocessing import Process, Pipe
 
-from miner_config import MINER_ADDRESS, PEER_NODES
+from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
 node = Flask(__name__)
 
@@ -132,6 +132,7 @@ def mine(a,blockchain,node_pending_transactions):
               "hash": last_block_hash
             }) + "\n")
             a.send(BLOCKCHAIN)
+            requests.get(MINER_NODE_URL + "/blocks?update=" + MINER_ADDRESS)
 
 
 def find_new_chains():
@@ -166,12 +167,17 @@ def consensus(blockchain):
 
 
 
+
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
-    # Load current blockchain
-    #chain_to_send = read_file()
-    #chain_to_send = BLOCKCHAIN
-    chain_to_send = b.recv()
+    # Load current blockchain. Only you should update your blockchain 
+    if request.args.get("update") == MINER_ADDRESS:
+        global BLOCKCHAIN
+        BLOCKCHAIN = b.recv()
+        chain_to_send = BLOCKCHAIN
+    else:
+        # Any other node trying to connect to your node will use this
+        chain_to_send = BLOCKCHAIN
     # Convert our blocks into dictionaries
     # so we can send them as json objects later
     chain_to_send_json = []
