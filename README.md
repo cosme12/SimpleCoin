@@ -23,6 +23,12 @@ There are 2 main scripts:
 
 This file is probably the most import. Running it will create a node (like a server). From here you can connet to the blockchain and process transaction (that other users send) by mining. As a reward for this work, you recieve some coins. The more nodes exist, the more secure the blockchain gets.
 
+```miner.py``` has 2 process running in parallel:
+
+1. the first process takes care of mining, updating new blockchains, and finding the proof of work
+
+2. the second process runs the flask server where peer nodes and users can connect to ask for the entire blockchain or sumbmit new transactions.
+
 ### Wallet.py
 
 This file is for those that don't want to be a node but simple users. Running this file allows you to generate a new address, send coins and check your transaction history.
