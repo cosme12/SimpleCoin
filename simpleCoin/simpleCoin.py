@@ -55,8 +55,11 @@ def create_genesis_block():
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
 
-# Store the transactions that this node has, in a list
-#global NODE_PENDING_TRANSACTIONS
+""" Store the transactions that this node has, in a list
+If the node you sent the transaction adds a block
+it will get accepted, but there is a chance it gets
+discarded and your transaction goes back as if it was never
+processed"""
 NODE_PENDING_TRANSACTIONS = []
 
 
@@ -85,7 +88,6 @@ def mine(a,blockchain,node_pending_transactions):
     BLOCKCHAIN = blockchain
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
-        #print("start mining")
         """Mining is the only way that new coins can be created.
         In order to prevent to many coins to be created, the process
         is slowed down by a proof of work algorithm.
@@ -105,6 +107,10 @@ def mine(a,blockchain,node_pending_transactions):
         else:
             # Once we find a valid proof of work, we know we can mine a block so 
             # we reward the miner by adding a transaction
+            #First we load all pending transactions sent to the node process
+            NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
+            NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
+            #Then we add the mining reward
             NODE_PENDING_TRANSACTIONS.append(
             { "from": "network",
               "to": MINER_ADDRESS,
@@ -124,7 +130,6 @@ def mine(a,blockchain,node_pending_transactions):
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
-            #print("end mined")
             print(json.dumps({
               "index": new_block_index,
               "timestamp": str(new_block_timestamp),
@@ -195,7 +200,7 @@ def get_blocks():
     return chain_to_send
 
 
-@node.route('/txion', methods=['POST'])
+@node.route('/txion', methods=['GET','POST'])
 def transaction():
     """Each transaction sent to this node gets validated and submitted.
     Then it waits to be added to the blockchain. Transactions only move
@@ -216,6 +221,9 @@ def transaction():
         print("AMOUNT: {0}\n".format(new_txion['amount']))
         # Then we let the client know it worked out
         return "Transaction submission successful\n"
+    #Send pending transactions to the mining process
+    elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
+        return json.dumps(NODE_PENDING_TRANSACTIONS)
 
 
 if __name__ == '__main__':
