@@ -1,4 +1,5 @@
-"""Configure this file before you start mining
+"""Configure this file before you start mining. Check wallet.py for
+more details.
 """
 
 # Write your generated adress here. All coins mined will go to this address
