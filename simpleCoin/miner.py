@@ -2,9 +2,11 @@ import time
 import hashlib as hasher
 import json
 import requests
+import base64
 from flask import Flask
 from flask import request
 from multiprocessing import Process, Pipe
+import ecdsa
 
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
@@ -107,7 +109,7 @@ def mine(a,blockchain,node_pending_transactions):
         else:
             # Once we find a valid proof of work, we know we can mine a block so 
             # we reward the miner by adding a transaction
-            #First we load all pending transactions sent to the node process
+            #First we load all pending transactions sent to the node server
             NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
             NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
             #Then we add the mining reward
@@ -125,7 +127,7 @@ def mine(a,blockchain,node_pending_transactions):
             new_block_timestamp = time.time()
             last_block_hash = last_block.hash
             # Empty transaction list
-            NODE_PENDING_TRANSACTIONS[:] = []
+            NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
             BLOCKCHAIN.append(mined_block)
@@ -207,23 +209,41 @@ def transaction():
     coins, they don't create it.
     """
     if request.method == 'POST':
-        # On each new POST request,
-        # we extract the transaction data
+        # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
         # Then we add the transaction to our list
-        #global NODE_PENDING_TRANSACTIONS
-        NODE_PENDING_TRANSACTIONS.append(new_txion)
-        # Because the transaction was successfully
-        # submitted, we log it to our console
-        print("New transaction")
-        print("FROM: {0}".format(new_txion['from']))
-        print("TO: {0}".format(new_txion['to']))
-        print("AMOUNT: {0}\n".format(new_txion['amount']))
-        # Then we let the client know it worked out
-        return "Transaction submission successful\n"
+        if validate_signature(new_txion['from'],new_txion['signature'],new_txion['message']):
+            NODE_PENDING_TRANSACTIONS.append(new_txion)
+            # Because the transaction was successfully
+            # submitted, we log it to our console
+            print("New transaction")
+            print("FROM: {0}".format(new_txion['from']))
+            print("TO: {0}".format(new_txion['to']))
+            print("AMOUNT: {0}\n".format(new_txion['amount']))
+            # Then we let the client know it worked out
+            return "Transaction submission successful\n"
+        else:
+            return "Transaction submission failed. Wrong signature\n"
     #Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
-        return json.dumps(NODE_PENDING_TRANSACTIONS)
+        pending = json.dumps(NODE_PENDING_TRANSACTIONS)
+        # Empty transaction list
+        NODE_PENDING_TRANSACTIONS[:] = []
+        return pending
+
+
+def validate_signature(public_key,signature,message):
+    """Verify if the signature is correct. This is used to prove if
+    it's you (and not someonelse) trying to do a trassaction with your
+    address
+    """
+    public_key = (base64.b64decode(public_key)).hex()
+    signature = base64.b64decode(signature)
+    vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key), curve=ecdsa.SECP256k1)
+    try:
+        return(vk.verify(signature, message.encode()))
+    except:
+        return False
 
 
 def welcome_msg():
