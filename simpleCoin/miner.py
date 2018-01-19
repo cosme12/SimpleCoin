@@ -150,8 +150,11 @@ def find_new_chains():
         block = requests.get(node_url + "/blocks").content
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
-        # Add it to our list
-        other_chains.append(block)
+        # Verify other node block is correct
+        validated = validate_blockchain(block)
+        if validated == True:
+            # Add it to our list
+            other_chains.append(block)
     return other_chains
 
 def consensus(blockchain):
@@ -173,20 +176,23 @@ def consensus(blockchain):
         return BLOCKCHAIN
 
 
+def validate_blockchain(block):
+    """Validate the submited chain. If hashes are not correct, return false
+    block(str): json
+    """
+    return True
 
 
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
-    # Load current blockchain. Only you should update your blockchain 
+    # Load current blockchain. Only you, should update your blockchain
     if request.args.get("update") == MINER_ADDRESS:
-        global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
         chain_to_send = BLOCKCHAIN
     else:
         # Any other node trying to connect to your node will use this
         chain_to_send = BLOCKCHAIN
-    # Convert our blocks into dictionaries
-    # so we can send them as json objects later
+    # Convert our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
@@ -235,7 +241,7 @@ def transaction():
 def validate_signature(public_key,signature,message):
     """Verify if the signature is correct. This is used to prove if
     it's you (and not someonelse) trying to do a trassaction with your
-    address
+    address. Called when a user try to submit a new transaction.
     """
     public_key = (base64.b64decode(public_key)).hex()
     signature = base64.b64decode(signature)
