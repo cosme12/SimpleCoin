@@ -46,9 +46,13 @@ This file is probably the most import. Running it will create a node (like a ser
 
 > Parallel process don't run in python IDLE, so make sure you are running it from the console.
 
+![miner](https://k60.kn3.net/3/B/3/F/E/C/013.png)
+
 ### Wallet.py
 
 This file is for those that don't want to be a node but simple users. Running this file allows you to generate a new address, send coins and check your transaction history (keep in mind that if you are running this in a local server, you will need a "miner" to process your transaction).
+
+![wallet](https://k60.kn3.net/6/F/E/3/8/2/887.png)
 
 ## Contribution
 Anybody is welcome to collaborate in this project. Feel free to push any pull request (even if you are new to coding).
