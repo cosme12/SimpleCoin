@@ -12,6 +12,21 @@ Taking a look at the [Bitcoin organization wiki website](https://en.bitcoin.it/w
 
 You can find more information in the original [Bitcoin Paper](https://bitcoin.org/bitcoin.pdf).
 
+## How to run it
+
+First, install ```requirements.txt```.
+
+```
+pip install requirements.txt
+```
+
+Then you have 2 options:
+
+- Run ```miner.py``` to become a node and start mining
+- Run ```wallet.py``` to become a user and send transactions (to send transactions you must run a node, in other words, you must run ```miner.py``` too)
+
+> Important: DO NOT run it in the python IDLE, run it in console. The ```miner.py``` use parallel process that don't work in the python IDLE.
+
 ## How this code work?
 
 There are 2 main scripts:
