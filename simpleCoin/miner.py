@@ -187,6 +187,7 @@ def validate_blockchain(block):
 def get_blocks():
     # Load current blockchain. Only you, should update your blockchain
     if request.args.get("update") == MINER_ADDRESS:
+        global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
         chain_to_send = BLOCKCHAIN
     else:
