@@ -36,7 +36,7 @@ There are 2 main scripts:
 
 ### Miner.py
 
-This file is probably the most import. Running it will create a node (like a server). From here you can connect to the blockchain and process transactions (that other users send) by mining. As a reward for this work, you recieve some coins. The more nodes exist, the more secure the blockchain gets.
+This file is probably the most important. Running it will create a node (like a server). From here you can connect to the blockchain and process transactions (that other users send) by mining. As a reward for this work, you recieve some coins. The more nodes exist, the more secure the blockchain gets.
 
 ```miner.py``` has 2 process running in parallel:
 
