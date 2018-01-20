@@ -17,7 +17,7 @@ You can find more information in the original [Bitcoin Paper](https://bitcoin.or
 First, install ```requirements.txt```.
 
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 Then you have 2 options:
