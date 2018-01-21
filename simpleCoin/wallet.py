@@ -107,7 +107,7 @@ def generate_ECDSA_keys():
 
     '''f"{something}" works the same as "{0}".format(something)'''
     #Because of an unknown error, cannot encode public_key before making the new file
-    file_name = str(public_key) + ".txt"
+    file_name = input("Name of your new direction: ") + ".txt"
     new_file = open(file_name, "w")
     #we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
