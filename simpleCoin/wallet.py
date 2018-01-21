@@ -83,7 +83,7 @@ def send_transaction(addr_from,private_key,addr_to,amount):
         res = requests.post(url, json=payload, headers=headers)
         print(res.text)
     else:
-        print("Wrong address or key lenght! Verify and try again.")
+        print("Wrong address or key length! Verify and try again.")
 
 def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
