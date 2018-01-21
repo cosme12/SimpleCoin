@@ -113,7 +113,7 @@ def generate_ECDSA_keys():
     public_key = base64.b64encode(bytes.fromhex(public_key))
     new_file.write(f"Private key: {private_key} \nWallet address / Public key: {public_key.decode()}")
     new_file.close()
-    print(f"New address generated succesfully. Your new credentials are in the file {file_name}")
+    print(f"New address generated succesfully. Your new credentials are in the file:\n {file_name}")
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
