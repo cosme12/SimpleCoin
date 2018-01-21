@@ -15,8 +15,8 @@ node = Flask(__name__)
 
 class Block:
     def __init__(self, index, timestamp, data, previous_hash):
-        """Return a new Block object. Each block is "chained" to it's previous
-        by calling it's unique hash.
+        """Return a new Block object. Each block is "chained" to its previous
+        by calling its unique hash.
 
         Args:
             index (int): Block number.
@@ -241,7 +241,7 @@ def transaction():
 
 def validate_signature(public_key,signature,message):
     """Verify if the signature is correct. This is used to prove if
-    it's you (and not someonelse) trying to do a trassaction with your
+    it's you (and not someon else) trying to do a transaction with your
     address. Called when a user try to submit a new transaction.
     """
     public_key = (base64.b64decode(public_key)).hex()
