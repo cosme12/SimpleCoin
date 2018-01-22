@@ -15,7 +15,7 @@ node = Flask(__name__)
 
 class Block:
     def __init__(self, index, timestamp, data, previous_hash):
-        """Return a new Block object. Each block is "chained" to its previous
+        """Returns a new Block object. Each block is "chained" to its previous
         by calling its unique hash.
 
         Args:
@@ -59,7 +59,7 @@ def create_genesis_block():
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
 
-""" Store the transactions that this node has, in a list
+""" Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
 discarded and your transaction goes back as if it was never
@@ -68,9 +68,13 @@ NODE_PENDING_TRANSACTIONS = []
 
 
 def proof_of_work(last_proof, blockchain):
-    # Create a variable that we will use to find our next proof of work
+    # Creates a variable that we will use to find our next proof of work
+    # Correct spelling of this variable is incrementer
+    # To be changed
     incrementor = last_proof + 1
-    # Keep incrementing the incrementor until it's equal to a number divisible by 9
+    # Get start time
+    start_time = time.time()
+    # Keep incrementing the incrementer until it's equal to a number divisible by 9
     # and the proof of work of the previous block in the chain
     while not (incrementor % 7919 == 0 and incrementor % last_proof == 0):
         incrementor += 1
@@ -79,8 +83,8 @@ def proof_of_work(last_proof, blockchain):
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
-            if new_blockchain is True:
-                # (False:another node got proof first, new blockchain)
+            if new_blockchain is False:
+                # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
     return incrementor, blockchain
@@ -91,7 +95,7 @@ def mine(a, blockchain, node_pending_transactions):
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
-        In order to prevent too many coins from being created, the process
+        In order to prevent to many coins to be created, the process
         is slowed down by a proof of work algorithm.
         """
         # Get the last proof of work
@@ -113,10 +117,10 @@ def mine(a, blockchain, node_pending_transactions):
             NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
             NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
             # Then we add the mining reward
-            NODE_PENDING_TRANSACTIONS.append(
-                {"from": "network",
-                 "to": MINER_ADDRESS,
-                 "amount": 1})
+            NODE_PENDING_TRANSACTIONS.append({
+                "from": "network",
+                "to": MINER_ADDRESS,
+                "amount": 1})
             # Now we can gather the data needed to create the new block
             new_block_data = {
                 "proof-of-work": proof[0],
@@ -177,7 +181,6 @@ def consensus(blockchain):
 
 
 def validate_blockchain(block):
-    # Work in progress
     """Validate the submitted chain. If hashes are not correct, return false
     block(str): json
     """
@@ -186,7 +189,7 @@ def validate_blockchain(block):
 
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
-    # Load current blockchain. Only you, should update your blockchain
+    # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == MINER_ADDRESS:
         global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
@@ -194,7 +197,7 @@ def get_blocks():
     else:
         # Any other node trying to connect to your node will use this
         chain_to_send = BLOCKCHAIN
-    # Convert our blocks into dictionaries so we can send them as json objects later
+    # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
