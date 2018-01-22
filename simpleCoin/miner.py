@@ -248,11 +248,9 @@ def validate_signature(public_key, signature, message):
     public_key = (base64.b64decode(public_key)).hex()
     signature = base64.b64decode(signature)
     vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key), curve=ecdsa.SECP256k1)
-    # Changed from try, except statement (Mainly because except was too broad).
-    # New coder please be gentle.
-    if vk.verify(signature, message.encode()) is True:
-        return True
-    else:
+    try:
+        return vk.verify(signature, message.encode())
+    except:
         return False
 
 
