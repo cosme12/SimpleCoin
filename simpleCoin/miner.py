@@ -77,7 +77,11 @@ def random_str():
 def check(str1, str2):
     '''SUMS 2 STRINGS, CREATES A MD5 HASH WITH THAT SUM AND CHECKS IF THE FIRST
     4 NUMBERS OF THE HASH ARE 0. THAT MAKES TO FIND A HASH A COMPUTATIONAL WORK'''
-    sum_of_str = (str1 + str2).encode("utf_8")#sums 2 strings
+    # Get the last proof of work
+    last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
+    last_proof = str(last_block.data['proof-of-work']) #Convert to string to make hash
+
+    sum_of_str = (last_proof +str1 + str2).encode("utf_8")#sums strings
     # now, lets convert them to a md5 hash
     m = hasher.md5()
     m.update(sum_of_str)
@@ -92,25 +96,25 @@ def check(str1, str2):
         return False #if the hash is not correct, return false
 
 def proof_of_work(blockchain):
-  # Create a variable that we will use to find our next proof of work
-  string_one = random_str()
-  # Get start time
-  start_time = time.time()
-  # Keep changing the string_two until the hash of their sum is correct
-
-  string_two = random_str()
-  while not (check(string_one, string_two)):
-    string_two = random_str()
+    # Create a variable that we will use to find our next proof of work
+    string_one = random_str()
+    # Get start time
     start_time = time.time()
-    # Check if any node found the solution every 60 seconds
-    if (int((time.time()-start_time)%60)==0):
-        # If any other node got the proof, stop searching
-        new_blockchain = consensus(blockchain)
+    # Keep changing the string_two until the hash of their sum is correct
+
+    string_two = random_str()
+    while not (check(string_one, string_two)):
+        string_two = random_str()
+        start_time = time.time()
+        # Check if any node found the solution every 60 seconds
+        if (int((time.time()-start_time)%60)==0):
+            # If any other node got the proof, stop searching
+            new_blockchain = consensus(blockchain)
         if new_blockchain != False:
             #(False:another node got proof first, new blockchain)
             return (False,new_blockchain)
-  # Once that number is found, we can return it as a proof of our work
-  return (string_two,blockchain)
+    # Once that number is found, we can return it as a proof of our work
+    return (string_two,blockchain)
 
 
 def mine(a,blockchain,node_pending_transactions):
