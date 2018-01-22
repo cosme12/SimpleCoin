@@ -37,7 +37,7 @@ class Block:
         self.data = data
         self.previous_hash = previous_hash
         self.hash = self.hash_block()
-  
+
     def hash_block(self):
         """Creates the unique hash for the block. It uses sha256."""
         sha = hasher.sha256()
@@ -56,6 +56,7 @@ def create_genesis_block():
 
 
 # Node's blockchain copy
+
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
 
@@ -69,15 +70,11 @@ NODE_PENDING_TRANSACTIONS = []
 
 def proof_of_work(last_proof, blockchain):
     # Creates a variable that we will use to find our next proof of work
-    # Correct spelling of this variable is incrementer
-    # To be changed
-    incrementor = last_proof + 1
-    # Get start time
-    start_time = time.time()
+    incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 9
     # and the proof of work of the previous block in the chain
-    while not (incrementor % 7919 == 0 and incrementor % last_proof == 0):
-        incrementor += 1
+    while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
+        incrementer += 1
         start_time = time.time()
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
@@ -87,7 +84,7 @@ def proof_of_work(last_proof, blockchain):
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
-    return incrementor, blockchain
+    return incrementer, blockchain
 
 
 def mine(a, blockchain, node_pending_transactions):
@@ -111,7 +108,7 @@ def mine(a, blockchain, node_pending_transactions):
             a.send(BLOCKCHAIN)
             continue
         else:
-            # Once we find a valid proof of work, we know we can mine a block so 
+            # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
             # First we load all pending transactions sent to the node server
             NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
@@ -193,10 +190,7 @@ def get_blocks():
     if request.args.get("update") == MINER_ADDRESS:
         global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
-        chain_to_send = BLOCKCHAIN
-    else:
-        # Any other node trying to connect to your node will use this
-        chain_to_send = BLOCKCHAIN
+    chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
     for block in chain_to_send:
@@ -251,6 +245,7 @@ def validate_signature(public_key, signature, message):
     public_key = (base64.b64decode(public_key)).hex()
     signature = base64.b64decode(signature)
     vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key), curve=ecdsa.SECP256k1)
+    # Try changing into an if/else statement as except is too broad.
     try:
         return vk.verify(signature, message.encode())
     except:
