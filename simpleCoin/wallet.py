@@ -57,7 +57,7 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
-    else:  # Response == 3 (!!CHANGE IF MORE OPTIONS ARE ADDED!!)
+    elif response == "3":
         check_transactions()
 
 
@@ -68,7 +68,7 @@ def send_transaction(addr_from, private_key, addr_to, amount):
     having a longer chain. So make sure your transaction is deep into the chain
     before claiming it as approved!
     """
-    # For fast debugging: !!REMOVE LATER!!
+    # For fast debugging REMOVE LATER
     # private_key="181f2448fa4636315032e15bb9cbc3053e10ed062ab0b2680a37cd8cb51f53f2"
     # amount="3000"
     # addr_from="SD5IZAuFixM3PTmkm5ShvLm1tbDNOmVlG7tg6F5r7VHxPNWkNKbzZfa+JdKmfBAIhWs9UKnQLOOL1U+R3WxcsQ=="
@@ -107,7 +107,7 @@ def generate_ECDSA_keys():
     public_ley: base64 (to make it shorter)
     """
     sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)  # This is your sign (private key)
-    private_key = sk.to_string().hex()  # Converts your private key to hex
+    private_key = sk.to_string().hex()  # Convert your private key to hex
     vk = sk.get_verifying_key()  # This is your verification key (public key)
     public_key = vk.to_string().hex()
     print("Private key: {0}".format(private_key))
@@ -125,7 +125,7 @@ def sign_ECDSA_msg(private_key):
     signature: base64 (to make it shorter)
     message: str
     """
-    # Get timestamp, round it, make it a string and encode it to bytes
+    # Get timestamp, round it, make it into a string and encode it to bytes
     message = str(round(time.time()))
     bmessage = message.encode()
     sk = ecdsa.SigningKey.from_string(bytes.fromhex(private_key), curve=ecdsa.SECP256k1)
