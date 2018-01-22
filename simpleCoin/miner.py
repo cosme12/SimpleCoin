@@ -15,7 +15,7 @@ node = Flask(__name__)
 
 class Block:
     def __init__(self, index, timestamp, data, previous_hash):
-        """Return a new Block object. Each block is "chained" to its previous
+        """Returns a new Block object. Each block is "chained" to its previous
         by calling its unique hash.
 
         Args:
@@ -44,20 +44,22 @@ class Block:
         sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
         return sha.hexdigest()
 
+
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
-    return Block(0, time.time(), 
-        {"proof-of-work": 9,"transactions": None},
-         "0")
+    return Block(0, time.time(), {
+        "proof-of-work": 9,
+        "transactions": None},
+        "0")
 
 
 # Node's blockchain copy
 BLOCKCHAIN = []
 BLOCKCHAIN.append(create_genesis_block())
 
-""" Store the transactions that this node has, in a list
+""" Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
 discarded and your transaction goes back as if it was never
@@ -65,28 +67,30 @@ processed"""
 NODE_PENDING_TRANSACTIONS = []
 
 
-def proof_of_work(last_proof,blockchain):
-  # Create a variable that we will use to find our next proof of work
-  incrementor = last_proof + 1
-  # Get start time
-  start_time = time.time()
-  # Keep incrementing the incrementor until it's equal to a number divisible by 9
-  # and the proof of work of the previous block in the chain
-  while not (incrementor % 7919 == 0 and incrementor % last_proof == 0):
-    incrementor += 1
+def proof_of_work(last_proof, blockchain):
+    # Creates a variable that we will use to find our next proof of work
+    # Correct spelling of this variable is incrementer
+    # To be changed
+    incrementor = last_proof + 1
+    # Get start time
     start_time = time.time()
-    # Check if any node found the solution every 60 seconds
-    if (int((time.time()-start_time)%60)==0):
-        # If any other node got the proof, stop searching
-        new_blockchain = consensus(blockchain)
-        if new_blockchain != False:
-            #(False:another node got proof first, new blockchain)
-            return (False,new_blockchain)
-  # Once that number is found, we can return it as a proof of our work
-  return (incrementor,blockchain)
+    # Keep incrementing the incrementer until it's equal to a number divisible by 9
+    # and the proof of work of the previous block in the chain
+    while not (incrementor % 7919 == 0 and incrementor % last_proof == 0):
+        incrementor += 1
+        start_time = time.time()
+        # Check if any node found the solution every 60 seconds
+        if int((time.time()-start_time) % 60) == 0:
+            # If any other node got the proof, stop searching
+            new_blockchain = consensus(blockchain)
+            if new_blockchain is False:
+                # (False: another node got proof first, new blockchain)
+                return False, new_blockchain
+    # Once that number is found, we can return it as a proof of our work
+    return incrementor, blockchain
 
 
-def mine(a,blockchain,node_pending_transactions):
+def mine(a, blockchain, node_pending_transactions):
     BLOCKCHAIN = blockchain
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
@@ -101,27 +105,26 @@ def mine(a,blockchain,node_pending_transactions):
         # Note: The program will hang here until a new proof of work is found
         proof = proof_of_work(last_proof, BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
-        if proof[0] == False:
+        if proof[0] is False:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
             a.send(BLOCKCHAIN)
             continue
         else:
             # Once we find a valid proof of work, we know we can mine a block so 
-            # we reward the miner by adding a transaction
-            #First we load all pending transactions sent to the node server
+            # ...we reward the miner by adding a transaction
+            # First we load all pending transactions sent to the node server
             NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
             NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
-            #Then we add the mining reward
-            NODE_PENDING_TRANSACTIONS.append(
-            { "from": "network",
-              "to": MINER_ADDRESS,
-              "amount": 1 }
-            )
+            # Then we add the mining reward
+            NODE_PENDING_TRANSACTIONS.append({
+                "from": "network",
+                "to": MINER_ADDRESS,
+                "amount": 1})
             # Now we can gather the data needed to create the new block
             new_block_data = {
-            "proof-of-work": proof[0],
-            "transactions": list(NODE_PENDING_TRANSACTIONS)
+                "proof-of-work": proof[0],
+                "transactions": list(NODE_PENDING_TRANSACTIONS)
             }
             new_block_index = last_block.index + 1
             new_block_timestamp = time.time()
@@ -152,10 +155,11 @@ def find_new_chains():
         block = json.loads(block)
         # Verify other node block is correct
         validated = validate_blockchain(block)
-        if validated == True:
+        if validated is True:
             # Add it to our list
             other_chains.append(block)
     return other_chains
+
 
 def consensus(blockchain):
     # Get the blocks from other nodes
@@ -177,7 +181,7 @@ def consensus(blockchain):
 
 
 def validate_blockchain(block):
-    """Validate the submited chain. If hashes are not correct, return false
+    """Validate the submitted chain. If hashes are not correct, return false
     block(str): json
     """
     return True
@@ -185,7 +189,7 @@ def validate_blockchain(block):
 
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
-    # Load current blockchain. Only you, should update your blockchain
+    # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == MINER_ADDRESS:
         global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
@@ -193,7 +197,7 @@ def get_blocks():
     else:
         # Any other node trying to connect to your node will use this
         chain_to_send = BLOCKCHAIN
-    # Convert our blocks into dictionaries so we can send them as json objects later
+    # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
@@ -209,7 +213,7 @@ def get_blocks():
     return chain_to_send
 
 
-@node.route('/txion', methods=['GET','POST'])
+@node.route('/txion', methods=['GET', 'POST'])
 def transaction():
     """Each transaction sent to this node gets validated and submitted.
     Then it waits to be added to the blockchain. Transactions only move
@@ -219,7 +223,7 @@ def transaction():
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
         # Then we add the transaction to our list
-        if validate_signature(new_txion['from'],new_txion['signature'],new_txion['message']):
+        if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
             NODE_PENDING_TRANSACTIONS.append(new_txion)
             # Because the transaction was successfully
             # submitted, we log it to our console
@@ -231,7 +235,7 @@ def transaction():
             return "Transaction submission successful\n"
         else:
             return "Transaction submission failed. Wrong signature\n"
-    #Send pending transactions to the mining process
+    # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS)
         # Empty transaction list
@@ -239,16 +243,16 @@ def transaction():
         return pending
 
 
-def validate_signature(public_key,signature,message):
-    """Verify if the signature is correct. This is used to prove if
-    it's you (and not someon else) trying to do a transaction with your
-    address. Called when a user try to submit a new transaction.
+def validate_signature(public_key, signature, message):
+    """Verifies if the signature is correct. This is used to prove
+    it's you (and not someone else) trying to do a transaction with your
+    address. Called when a user tries to submit a new transaction.
     """
     public_key = (base64.b64decode(public_key)).hex()
     signature = base64.b64decode(signature)
     vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key), curve=ecdsa.SECP256k1)
     try:
-        return(vk.verify(signature, message.encode()))
+        return vk.verify(signature, message.encode())
     except:
         return False
 
@@ -264,10 +268,10 @@ def welcome_msg():
 
 if __name__ == '__main__':
     welcome_msg()
-    #Start mining
-    a,b=Pipe()
-    p1 = Process(target = mine, args=(a,BLOCKCHAIN,NODE_PENDING_TRANSACTIONS))
+    # Start mining
+    a, b = Pipe()
+    p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
     p1.start()
-    #Start server to recieve transactions
-    p2 = Process(target = node.run(), args=b)
+    # Start server to receive transactions
+    p2 = Process(target=node.run(), args=b)
     p2.start()
