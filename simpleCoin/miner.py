@@ -101,7 +101,7 @@ def check_transactions():
 def generate_ECDSA_keys():
     """This function takes care of creating your private and public (your address) keys.
     It's very important you don't lose any of them or those wallets will be lost
-    forever. If someone selse get access to your private key, you risk losing your coins.
+    forever. If someone else get access to your private key, you risk losing your coins.
 
     private_key: str
     public_ley: base64 (to make it shorter)
