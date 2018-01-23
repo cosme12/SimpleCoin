@@ -54,11 +54,14 @@ This file is for those that don't want to be a node but simple users. Running th
 
 ![wallet](https://k60.kn3.net/6/F/E/3/8/2/887.png)
 
+
 ## Contribution
-Anybody is welcome to collaborate in this project. Feel free to push any pull request (even if you are new to coding).
+
+Anybody is welcome to collaborate in this project. Feel free to push any pull request (even if you are new to coding). See ```CONTRIBUTING.md``` to learn how to contribute.
 
 Note: the idea of this project is to build a **really simple** blockchain system, so make sure all your code is easy to read (avoid too much code in 1 line) and don't introduce complex updates if they are not critical. In other words, keep it simple.
 
 
 ## Disclaimer
+
 By no means this project should be used for real purposes, it lacks security and may contain several bugs.

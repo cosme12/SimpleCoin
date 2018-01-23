@@ -56,7 +56,6 @@ def create_genesis_block():
 
 
 # Node's blockchain copy
-
 BLOCKCHAIN = [create_genesis_block()]
 
 """ Stores the transactions that this node has in a list.
