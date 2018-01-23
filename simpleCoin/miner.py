@@ -7,6 +7,9 @@ from flask import Flask
 from flask import request
 from multiprocessing import Process, Pipe
 import ecdsa
+import re
+import string
+from random import randrange
 
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
@@ -67,27 +70,57 @@ discarded and your transaction goes back as if it was never
 processed"""
 NODE_PENDING_TRANSACTIONS = []
 
+def random_str():
+        '''GENERATES RANDOM STRING MADE OF DOWNCASE LETTERS [a-z]'''
+        rand_str = ''
+        for i in range(randrange(1, 20)):# the string length is random, from 1 to 20 chars...
+            rand_str += string.ascii_lowercase[randrange(26)]# each char is a random downcase letter [a-z]
+        return rand_str # returns the random string
+      
+def check(str1, str2):
+    '''SUMS 2 STRINGS, CREATES A MD5 HASH WITH THAT SUM AND CHECKS IF THE FIRST
+    4 NUMBERS OF THE HASH ARE 0. THAT MAKES TO FIND A HASH A COMPUTATIONAL WORK'''
+    # Get the last proof of work
+    last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
+    last_proof = str(last_block.data['proof-of-work']) #Convert to string to make hash
 
-def proof_of_work(last_proof, blockchain):
-    # Creates a variable that we will use to find our next proof of work
-    incrementer = last_proof + 1
-    # Keep incrementing the incrementer until it's equal to a number divisible by 9
-    # and the proof of work of the previous block in the chain
-    while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
-        incrementer += 1
+    sum_of_str = (last_proof +str1 + str2).encode("utf_8")#sums strings
+    # now, lets convert them to a md5 hash
+    m = hasher.md5()
+    m.update(sum_of_str)
+    hash_generated = m.hexdigest()
+    # done.
+    # now we see if the hash's first 4 chars are zeros. 
+    # The amount of zeros can be changed to make the proof easier or harder
+    # to find.
+    if re.match("0000", str(hash_generated)):
+        return True #if the hash is correct, return true
+    else:
+        return False #if the hash is not correct, return false
+
+def proof_of_work(blockchain):
+    # Create a variable that we will use to find our next proof of work
+    string_one = random_str()
+    # Get start time
+    start_time = time.time()
+    # Keep changing the string_two until the hash of their sum is correct
+
+    string_two = random_str()
+    while not (check(string_one, string_two)):
+        string_two = random_str()
         start_time = time.time()
         # Check if any node found the solution every 60 seconds
-        if int((time.time()-start_time) % 60) == 0:
+        if (int((time.time()-start_time)%60)==0):
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
-            if new_blockchain is False:
-                # (False: another node got proof first, new blockchain)
-                return False, new_blockchain
+        if new_blockchain != False:
+            #(False:another node got proof first, new blockchain)
+            return (False,new_blockchain)
     # Once that number is found, we can return it as a proof of our work
-    return incrementer, blockchain
+    return (string_two,blockchain)
 
 
-def mine(a, blockchain, node_pending_transactions):
+def mine(a,blockchain,node_pending_transactions):
     BLOCKCHAIN = blockchain
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
@@ -100,7 +133,7 @@ def mine(a, blockchain, node_pending_transactions):
         last_proof = last_block.data['proof-of-work']
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
-        proof = proof_of_work(last_proof, BLOCKCHAIN)
+        proof = proof_of_work(BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
         if proof[0] is False:
             # Update blockchain and save it to file
