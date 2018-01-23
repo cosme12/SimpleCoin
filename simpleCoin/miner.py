@@ -57,8 +57,7 @@ def create_genesis_block():
 
 # Node's blockchain copy
 
-BLOCKCHAIN = []
-BLOCKCHAIN.append(create_genesis_block())
+BLOCKCHAIN = [create_genesis_block()]
 
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
