@@ -57,7 +57,7 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
-    elif response == "3":
+    else:  # Will always occur when response == 3.
         check_transactions()
 
 
