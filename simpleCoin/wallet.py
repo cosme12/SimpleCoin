@@ -109,6 +109,9 @@ def generate_ECDSA_keys():
     public_key = base64.b64encode(bytes.fromhex(public_key))
     #using decode() to remove the b'' from the printed string
     print("Wallet address / Public key: {0}".format(public_key.decode()))
+    new_file=open("wallet", "a")
+    new_file.write(f"Private key: {private_key}" + f"\nWallet address / Public key: {public_key.decode()}")
+    new_file.close()
 
 
 def sign_ECDSA_msg(private_key):
