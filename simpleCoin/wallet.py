@@ -14,7 +14,7 @@ going to mine).
 Timestamp in hashed message. When you send your transaction it will be received
 by several nodes. If any node mine a block, your transaction will get added to the
 blockchain but other nodes still will have it pending. If any node see that your
-transaction with same timestamp was added, they should remove it from the 
+transaction with same timestamp was added, they should remove it from the
 node_pending_transactions list to avoid it get processed more than 1 time.
 """
 
@@ -45,7 +45,7 @@ def wallet():
         print("""=========================================\n
 IMPORTANT: save this credentials or you won't be able to recover your wallet\n
 =========================================\n""")
-        generate_ECDSA_keys()        
+        generate_ECDSA_keys()
     elif response in "2":
         addr_from = input("From: introduce your wallet address (public key)\n")
         private_key = input("Introduce your private key\n")
@@ -73,7 +73,7 @@ def send_transaction(addr_from, private_key, addr_to, amount):
     # amount="3000"
     # addr_from="SD5IZAuFixM3PTmkm5ShvLm1tbDNOmVlG7tg6F5r7VHxPNWkNKbzZfa+JdKmfBAIhWs9UKnQLOOL1U+R3WxcsQ=="
     # addr_to="SD5IZAuFixM3PTmkm5ShvLm1tbDNOmVlG7tg6F5r7VHxPNWkNKbzZfa+JdKmfBAIhWs9UKnQLOOL1U+R3WxcsQ=="
-        
+
     if len(private_key) == 64:
         signature, message = sign_ECDSA_msg(private_key)
         url = 'http://localhost:5000/txion'
@@ -106,16 +106,19 @@ def generate_ECDSA_keys():
     private_key: str
     public_ley: base64 (to make it shorter)
     """
-    sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)  # This is your sign (private key)
-    private_key = sk.to_string().hex()  # Convert your private key to hex
-    vk = sk.get_verifying_key()  # This is your verification key (public key)
+    
+    file_name = str(input("Write the name of your new address: ") + ".txt")
+    new_file = open(file_name, "w")
+    sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1) #this is your sign (private key)
+    private_key = sk.to_string().hex() #convert your private key to hex
+    vk = sk.get_verifying_key() #this is your verification key (public key)
     public_key = vk.to_string().hex()
-    print("Private key: {0}".format(private_key))
-    # We are going to encode the public key to make it shorter
+    #we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
-    # Using decode() to remove the b'' from the printed string
-    print("Wallet address / Public key: {0}".format(public_key.decode()))
-
+    #using decode() to remove the b'' from the printed string
+    new_file.write(f"Private key: {private_key}" + f"\nWallet address / Public key: {public_key.decode()}")
+    print(f"Your new address and private key are now in the file {file_name}")
+    new_file.close()
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
