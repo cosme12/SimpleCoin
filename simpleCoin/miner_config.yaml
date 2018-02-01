@@ -1,0 +1,12 @@
+/* Configure this file before you start mining. Check wallet.py for
+more details */
+
+# Write your generated adress here. All coins mined will go to this address
+address: "q3nf394hjg-random-miner-address-34nf3i4nflkn3oi"
+  
+# Write your node URL or IP. If you are running it localhost use default
+node_url: "http://localhost:5000"
+
+# Store the URL data of every other node in the network
+# so that we can communicate with them
+peer_nodes: []
