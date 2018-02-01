@@ -1,6 +1,7 @@
 import time
-import hashlib as hasher
+import hashlib
 import json
+import yaml
 import requests
 import base64
 from flask import Flask
@@ -8,7 +9,12 @@ from flask import request
 from multiprocessing import Process, Pipe
 import ecdsa
 
-from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
+with open("miner_config.yaml", "r") as f:
+    miner_config = yaml.load(f)
+MINER_ADDRESS = miner_config["address"]
+MINER_NODE_URL = miner_config["node_url"]
+PEER_NODES = miner_config["peer_nodes"]
+
 
 node = Flask(__name__)
 
@@ -40,7 +46,7 @@ class Block:
 
     def hash_block(self):
         """Creates the unique hash for the block. It uses sha256."""
-        sha = hasher.sha256()
+        sha = hashlib.sha256()
         sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
         return sha.hexdigest()
 
@@ -78,7 +84,7 @@ def proof_of_work(last_proof, blockchain):
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
-            if new_blockchain is False:
+            if not new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
@@ -96,15 +102,17 @@ def mine(a, blockchain, node_pending_transactions):
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
         last_proof = last_block.data['proof-of-work']
+
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
         proof = proof_of_work(last_proof, BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
-        if proof[0] is False:
+        if not proof[0]:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
             a.send(BLOCKCHAIN)
             continue
+
         else:
             # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
@@ -116,6 +124,7 @@ def mine(a, blockchain, node_pending_transactions):
                 "from": "network",
                 "to": MINER_ADDRESS,
                 "amount": 1})
+
             # Now we can gather the data needed to create the new block
             new_block_data = {
                 "proof-of-work": proof[0],
@@ -124,11 +133,13 @@ def mine(a, blockchain, node_pending_transactions):
             new_block_index = last_block.index + 1
             new_block_timestamp = time.time()
             last_block_hash = last_block.hash
+
             # Empty transaction list
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
             BLOCKCHAIN.append(mined_block)
+
             # Let the client know this node mined a block
             print(json.dumps({
               "index": new_block_index,
@@ -148,6 +159,7 @@ def find_new_chains():
         block = requests.get(node_url + "/blocks").content
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
+
         # Verify other node block is correct
         validated = validate_blockchain(block)
         if validated is True:
@@ -165,6 +177,7 @@ def consensus(blockchain):
     for chain in other_chains:
         if len(longest_chain) < len(chain):
             longest_chain = chain
+
     # If the longest chain wasn't ours, then we set our chain to the longest
     if longest_chain == BLOCKCHAIN:
         # Keep searching for proof
@@ -188,6 +201,7 @@ def get_blocks():
     if request.args.get("update") == MINER_ADDRESS:
         global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
+
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
@@ -211,9 +225,11 @@ def transaction():
     Then it waits to be added to the blockchain. Transactions only move
     coins, they don't create it.
     """
+
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
+
         # Then we add the transaction to our list
         if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
             NODE_PENDING_TRANSACTIONS.append(new_txion)
@@ -227,6 +243,7 @@ def transaction():
             return "Transaction submission successful\n"
         else:
             return "Transaction submission failed. Wrong signature\n"
+
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS)
@@ -250,7 +267,7 @@ def validate_signature(public_key, signature, message):
         return False
 
 
-def welcome_msg():
+if __name__ == '__main__':
     print("""       =========================================\n
         SIMPLE COIN v1.0.0 - BLOCKCHAIN SYSTEM\n
        =========================================\n\n
@@ -258,9 +275,6 @@ def welcome_msg():
         Make sure you are using the latest version or you may end in
         a parallel chain.\n\n\n""")
 
-
-if __name__ == '__main__':
-    welcome_msg()
     # Start mining
     a, b = Pipe()
     p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
