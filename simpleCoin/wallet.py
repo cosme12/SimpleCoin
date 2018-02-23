@@ -106,8 +106,8 @@ def generate_ECDSA_keys():
     
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
-        new_file.write("Private key: {private_key}\nWallet address / Public key: {}".format(private_key, public_key.decode())
-    print(f"Your new address and private key are now in the file {file_name}")
+        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
+    print("Your new address and private key are now in the file {0}".format(filename))
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
