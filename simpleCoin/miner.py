@@ -78,7 +78,7 @@ def proof_of_work(last_proof, blockchain):
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
-            if new_blockchain is False:
+            if new_blockchain != False:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
