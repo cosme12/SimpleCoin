@@ -71,9 +71,9 @@ def proof_of_work(last_proof, blockchain):
     incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 9
     # and the proof of work of the previous block in the chain
+    start_time = time.time()
     while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
         incrementer += 1
-        start_time = time.time()
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
