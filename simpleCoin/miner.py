@@ -1,10 +1,9 @@
 import time
-import hashlib as hasher
+import hashlib
 import json
 import requests
 import base64
-from flask import Flask
-from flask import request
+from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
 
@@ -40,7 +39,7 @@ class Block:
 
     def hash_block(self):
         """Creates the unique hash for the block. It uses sha256."""
-        sha = hasher.sha256()
+        sha = hashlib.sha256()
         sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
         return sha.hexdigest()
 
@@ -78,7 +77,7 @@ def proof_of_work(last_proof, blockchain):
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
-            if new_blockchain != False:
+            if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
@@ -100,7 +99,7 @@ def mine(a, blockchain, node_pending_transactions):
         # Note: The program will hang here until a new proof of work is found
         proof = proof_of_work(last_proof, BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
-        if proof[0] is False:
+        if not proof[0]:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
             a.send(BLOCKCHAIN)
@@ -150,7 +149,7 @@ def find_new_chains():
         block = json.loads(block)
         # Verify other node block is correct
         validated = validate_blockchain(block)
-        if validated is True:
+        if validated:
             # Add it to our list
             other_chains.append(block)
     return other_chains
