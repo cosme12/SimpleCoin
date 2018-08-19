@@ -1,5 +1,5 @@
 # SimpleCoin
-Just a really simple, insecure and incomplete implementation of a blockchain for a cryptocurrency made in Python. The goal of this project is to make a working blockchain currency, keeping it as simple as posible, to be used as educational material.
+Just a really simple, insecure and incomplete implementation of a blockchain for a cryptocurrency made in Python. The goal of this project is to make a working blockchain currency, keeping it as simple as possible and to be used as educational material.
 
 >This project is just being made for fun. If you want to make your own cryptocurrency you should probably take a look at the [Bitcoin Repository](https://github.com/bitcoin/bitcoin).
 
@@ -25,7 +25,7 @@ Then you have 2 options:
 - Run ```miner.py``` to become a node and start mining
 - Run ```wallet.py``` to become a user and send transactions (to send transactions you must run a node, in other words, you must run ```miner.py``` too)
 
-> Important: DO NOT run it in the python IDLE, run it in console. The ```miner.py``` use parallel process that don't work in the python IDLE.
+> Important: DO NOT run it in the python IDLE, run it in your console. The ```miner.py``` uses parallel processing that doesn't work in the python IDLE.
 
 ## How this code work?
 
@@ -38,19 +38,19 @@ There are 2 main scripts:
 
 This file is probably the most important. Running it will create a node (like a server). From here you can connect to the blockchain and process transactions (that other users send) by mining. As a reward for this work, you recieve some coins. The more nodes exist, the more secure the blockchain gets.
 
-```miner.py``` has 2 process running in parallel:
+```miner.py``` has 2 processes running in parallel:
 
-1. The first process takes care of mining, updating new blockchains, and finding the proof of work.
+1. The first process takes care of mining, updating new blockchains and finding the proof of work.
 
 2. The second process runs the flask server where peer nodes and users can connect to ask for the entire blockchain or sumbmit new transactions.
 
-> Parallel process don't run in python IDLE, so make sure you are running it from the console.
+> Parallel processes don't run in python IDLE, so make sure you are running it from the console.
 
 ![miner](https://k60.kn3.net/3/B/3/F/E/C/013.png)
 
 ### Wallet.py
 
-This file is for those that don't want to be a node but simple users. Running this file allows you to generate a new address, send coins and check your transaction history (keep in mind that if you are running this in a local server, you will need a "miner" to process your transaction).
+This file is for those who don't want to be nodes but simple users. Running this file allows you to generate a new address, send coins and check your transaction history (keep in mind that if you are running this in a local server, you will need a "miner" to process your transaction).
 When creating a wallet address, a new file will be generated with all your security credentials. You are supposed to keep it safe.
 
 ![wallet](https://k60.kn3.net/6/F/E/3/8/2/887.png)
