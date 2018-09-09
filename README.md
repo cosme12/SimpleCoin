@@ -58,6 +58,8 @@ When creating a wallet address, a new file will be generated with all your secur
 
 ## Contribution
 
+Major code modifcations by HourGlss to change proof of work, memory usage, enable networking, and blockchain validation
+
 Anybody is welcome to collaborate in this project. Feel free to push any pull request (even if you are new to coding). See ```CONTRIBUTING.md``` to learn how to contribute.
 
 Note: the idea of this project is to build a **really simple** blockchain system, so make sure all your code is easy to read (avoid too much code in 1 line) and don't introduce complex updates if they are not critical. In other words, keep it simple.

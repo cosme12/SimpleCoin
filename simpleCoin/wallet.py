@@ -46,6 +46,7 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         print("Is everything correct?\n")
         print("From: {0}\nPrivate Key: {1}\nTo: {2}\nAmount: {3}\n".format(addr_from, private_key, addr_to, amount))
         response = input("y/n\n")
+        print("From: {0}\nPrivate Key: {1}\nTo: {2}\nAmount: {3}\n".format(addr_from, private_key, addr_to, amount))
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
     else:  # Will always occur when response == 3.
