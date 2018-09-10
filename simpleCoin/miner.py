@@ -13,6 +13,7 @@ import secrets
 import string
 import logging
 import simpleCoin.user as user
+
 try:
     assert user.public_key != "" and user.private_key != ""
 except AssertionError:
@@ -39,13 +40,13 @@ class Block:
         Args:
             index (int): Block number.
             timestamp (int): Block creation timestamp.
-            data (str): Data to be sent.
+            data (dict): Data to be sent.
             previous_hash(str): String representing previous block unique hash.
 
         Attrib:
             index (int): Block number.
             timestamp (int): Block creation timestamp.
-            data (str): Data to be sent.
+            data (dict): Data to be sent.
             previous_hash(str): String representing previous block unique hash.
             hash(str): Current block unique hash.
 
@@ -53,6 +54,12 @@ class Block:
         self.index = index
         self.timestamp = timestamp
         self.data = data
+        '''
+        data contains:
+         proof-of-work (str)
+         transations: (list?)
+        
+        '''
         self.previous_hash = previous_hash
         self.hash = self.hash_block()
 
@@ -62,21 +69,26 @@ class Block:
         sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
         return sha.hexdigest()
 
+    def __repr__(self):
+        return str(self)
+    def __str__(self):
+        return "i: {} time: {} data: {} previous: {} hash: {}".format(self.index, self.timestamp, self.data, self.previous_hash, self.hash)
+
 
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
     b = Block(0, time.time(), {
-        "proof-of-work": "00000001337deadbeef1337deadbeef1337deadbeef1337deadbeef1337deadb",
+        "proof-of-work": "1337",
         "transactions": None},
               "0")
-    print(json.dumps({
-        "index": b.index,
-        "timestamp": str(b.timestamp),
-        "data": b.data,
-        "hash": b.hash
-    }) + "\n")
+    # print(json.dumps({
+    #     "index": b.index,
+    #     "timestamp": str(b.timestamp),
+    #     "data": b.data,
+    #     "hash": b.hash
+    # }) + "\n")
     return b
 
 
@@ -91,29 +103,29 @@ processed"""
 NODE_PENDING_TRANSACTIONS = []
 
 
-def proof_of_work(last_proof, blockchain):
+def proof_of_work(last_block,transactions):
+
+    data = {"transactions":transactions}
+    pow = ""
     def random_str():
         # Generate a random size string from 3 - 27 characters long
         rand_str = ''
-        for i in range(0, 3 + secrets.randbelow(25)):
+        for i in range(0, 0 + secrets.randbelow(25)):
             rand_str += string.ascii_lowercase[secrets.randbelow(26)]  # each char is a random downcase letter [a-z]
         return rand_str
 
     def genhash():
-        # Generate random string
-        r = random_str()
-        # Create hash object
+        pow = random_str()
         m = hashlib.sha3_256()
-        # update that hash object with the string
-        m.update(r.encode("utf-8"))
+        data["proof-of-work"] = pow
+        m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
 
-        # return the string format of the hash
-        return m.hexdigest()
+        return pow,m.hexdigest()
 
-    pow_hash = genhash()
+    pow,pow_hash = genhash()
     start_time = time.time()
     # check to see if the first <work> characters of the string are 0
-    work = 4
+    work = 1
     while not (pow_hash[0:work] == ("0" * work)):
 
         # Check if any node found the solution every 60 seconds
@@ -126,11 +138,11 @@ def proof_of_work(last_proof, blockchain):
         # generate new hash for next time
         pow_hash = genhash()
     # Once that hash is found, we can return it as a proof of our work
-    return pow_hash, blockchain
+    return pow,pow_hash
 
 
 def mine(a, blockchain, node_pending_transactions):
-    BLOCKCHAIN = blockchain
+    global BLOCKCHAIN
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
@@ -139,10 +151,19 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-        last_proof = last_block.data['proof-of-work']
+        NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + user.public_key).content
+        NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
+        # Then we add the mining reward
+        NODE_PENDING_TRANSACTIONS.append({
+            "from": "network",
+            "to": user.public_key,
+            "amount": 1.0})
+
+
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
-        proof = proof_of_work(last_proof, BLOCKCHAIN)
+
+        proof = proof_of_work(last_block, NODE_PENDING_TRANSACTIONS)
         # If we didn't guess the proof, start mining again
         if not proof[0]:
             # Update blockchain and save it to file
@@ -150,16 +171,7 @@ def mine(a, blockchain, node_pending_transactions):
             a.send(BLOCKCHAIN)
             continue
         else:
-            # Once we find a valid proof of work, we know we can mine a block so
-            # ...we reward the miner by adding a transaction
-            # First we load all pending transactions sent to the node server
-            NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + user.public_key).content
-            NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
-            # Then we add the mining reward
-            NODE_PENDING_TRANSACTIONS.append({
-                "from": "network",
-                "to": user.public_key,
-                "amount": 1})
+
             # Now we can gather the data needed to create the new block
             new_block_data = {
                 "proof-of-work": proof[0],
@@ -167,19 +179,22 @@ def mine(a, blockchain, node_pending_transactions):
             }
             new_block_index = last_block.index + 1
             new_block_timestamp = time.time()
-            last_block_hash = last_block.hash
+
             # Empty transaction list
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
-            mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
+            mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block.hash)
+            for block in BLOCKCHAIN:
+                print(block)
+
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
-            print(json.dumps({
-                "index": new_block_index,
-                "timestamp": str(new_block_timestamp),
-                "data": new_block_data,
-                "hash": last_block_hash
-            }) + "\n")
+            # print(json.dumps({
+            #     "index": new_block_index,
+            #     "timestamp": str(new_block_timestamp),
+            #     "data": new_block_data,
+            #     "hash": last_block_hash
+            # }) + "\n")
             a.send(BLOCKCHAIN)
             requests.get(MINER_NODE_URL + "/blocks?update=" + user.public_key)
 
@@ -342,11 +357,9 @@ def get_balance():
 
 
 if __name__ == '__main__':
-
     welcome_msg()
     # Start mining
     a, b = Pipe()
-    print(b)
     p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
     p1.start()
     # Start server to receive transactions
