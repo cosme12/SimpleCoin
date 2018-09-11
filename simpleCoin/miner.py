@@ -16,7 +16,6 @@ import simpleCoin.user as user
 from simpleCoin.Block import Block
 from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES, PORT
 
-
 try:
     assert user.public_key != "" and user.private_key != ""
 except AssertionError:
@@ -28,17 +27,17 @@ from flask_sqlalchemy import SQLAlchemy
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-
-
 node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 1
+work = 4
 try:
     assert work > 0 and work < 65
 except AssertionError:
     print("Work value must be greater than 0 and less than 65")
+
+
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
@@ -49,7 +48,7 @@ def create_genesis_block():
     pad = "1337"
     for i in range(4, 64):
         pow += pad[i % len(pad)]
-    b = Block(0, time.time(), "",{
+    b = Block(0, time.time(), "", {
         "proof-of-work": pow,
         "transactions": None},
               "0")
@@ -74,6 +73,8 @@ NODE_PENDING_TRANSACTIONS = []
 
 
 def proof_of_work(last_block, transactions):
+    # if last_block.index > 0:
+    #     print("proof of work")
     data = {"transactions": list(transactions)}
     pow = ""
 
@@ -107,7 +108,7 @@ def proof_of_work(last_block, transactions):
     # check to see if the first <work> characters of the string are 0
     global work
     lead = leadingzeroes(pow_hash.digest())
-    while lead < work :
+    while lead < work:
 
         # Check if any node found the solution every 60 seconds
         if int((time.time() - start_time) % 60) == 0:
@@ -125,6 +126,8 @@ def proof_of_work(last_block, transactions):
 
 def mine(a, blockchain, node_pending_transactions):
     global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN)-1].index > 0:
+    #     print("Mine")
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
@@ -133,8 +136,12 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-        NODE_PENDING_TRANSACTIONS = requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/txion?update=" + user.public_key).content
+        # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+        #     print("mine - before node_pending")
+
+        NODE_PENDING_TRANSACTIONS = requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
         NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
+
         # Then we add the mining reward
         NODE_PENDING_TRANSACTIONS.append({
             "from": "network",
@@ -145,7 +152,8 @@ def mine(a, blockchain, node_pending_transactions):
         # Note: The program will hang here until a new proof of work is found
 
         proof = proof_of_work(last_block, NODE_PENDING_TRANSACTIONS)
-
+        # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+        #     print("mine - after node_pending")
         # If we didn't guess the proof, start mining again
         if not proof[0]:
             # Update blockchain and save it to file
@@ -165,8 +173,9 @@ def mine(a, blockchain, node_pending_transactions):
             # Empty transaction list
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
-            mined_block = Block(new_block_index, new_block_timestamp, new_block_effort,new_block_data, last_block.hash)
-            print(mined_block.timestamp - last_block.timestamp,mined_block)
+
+            mined_block = Block(new_block_index, new_block_timestamp, new_block_effort, new_block_data, last_block.hash)
+            print(mined_block.timestamp - last_block.timestamp, mined_block)
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
             # print(json.dumps({
@@ -175,11 +184,22 @@ def mine(a, blockchain, node_pending_transactions):
             #     "data": new_block_data,
             #     "hash": last_block_hash
             # }) + "\n")
+            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+            #     print("mine - before a.send")
+            #     print("closed",a.closed)
+            #     print("writable", a.writable)
             a.send(BLOCKCHAIN)
+            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+            #     print("mine - after a.send")
             requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/blocks?update=" + user.public_key)
+            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+            #     print("mine - after requests.get")
 
 
 def find_new_chains():
+    # global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("Find New Chains")
     # Get the blockchains of every other node
     other_chains = []
     if len(other_chains) != 0:
@@ -188,7 +208,7 @@ def find_new_chains():
         # Get their chains using a GET request
         blocks = None
         try:
-            blocks = requests.get(node_url+":"+PORT + "/blocks").content
+            blocks = requests.get(node_url + ":" + PORT + "/blocks").content
         except:
             pass
         # Convert the JSON object to a Python dictionary
@@ -205,10 +225,12 @@ def find_new_chains():
 
 
 def consensus():
+    global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("Consensus")
     # Get the blocks from other nodes
     other_chains = find_new_chains()
     # If our chain isn't longest, then we store the longest chain
-    global BLOCKCHAIN
     longest_chain = BLOCKCHAIN
     for chain in other_chains:
         if longest_chain == BLOCKCHAIN:
@@ -226,6 +248,9 @@ def consensus():
 
 
 def validate_blockchain(blockchain):
+    # global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("validate_blockchain")
     global work
 
     previous = ""
@@ -251,6 +276,9 @@ def validate_blockchain(blockchain):
 
 
 def validate_signature(public_key, signature, message):
+    # global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("verify_signature")
     """Verifies if the signature is correct. This is used to prove
     it's you (and not someone else) trying to do a transaction with your
     address. Called when a user tries to submit a new transaction.
@@ -276,9 +304,11 @@ def welcome_msg():
 
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
+    global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("get_blocks")
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
-        global BLOCKCHAIN
         BLOCKCHAIN = b.recv()
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
@@ -294,7 +324,7 @@ def get_blocks():
         chain_to_send_json.append(block)
 
     # Send our chain to whomever requested it
-    ip = request.remote_addr+":"+str(PORT)
+    ip = request.remote_addr + ":" + str(PORT)
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(ip)
     chain_to_send = json.dumps(chain_to_send_json)
@@ -303,9 +333,9 @@ def get_blocks():
 
 @node.route('/txion', methods=['GET', 'POST'])
 def transaction():
-    """Each transaction sent to this node gets validated and submitted.
-    Then it waits to be added to the blockchain. Transactions only move coins, they don't create it.
-    """
+    # global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    # print("transaction")
 
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
@@ -321,12 +351,12 @@ def transaction():
             print("AMOUNT: {0}\n".format(new_txion['amount']))
             # Then we let the client know it worked out
 
-            #Push to all other available nodes
+            # Push to all other available nodes
             for node_url in PEER_NODES:
                 if node_url != request.remote_addr:
                     try:
                         headers = {"Content-Type": "application/json"}
-                        requests.post(node_url+":"+PORT+"/txion",json = new_txion,headers = headers)
+                        requests.post(node_url + ":" + PORT + "/txion", json=new_txion, headers=headers)
                     except:
                         pass
             return "Transaction submission successful\n"
@@ -343,6 +373,8 @@ def transaction():
 @node.route('/balances', methods=['GET'])
 def get_balance():
     global BLOCKCHAIN
+    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
+    #     print("Balances")
     working = BLOCKCHAIN
     balances = {}
     balances_json = []
