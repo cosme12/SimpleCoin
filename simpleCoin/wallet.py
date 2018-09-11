@@ -104,6 +104,13 @@ def generate_ECDSA_keys():
     public_key = vk.to_string().hex()
     #we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
+    while "+" in public_key.decode() or "+" in private_key:
+        sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)  # this is your sign (private key)
+        private_key = sk.to_string().hex()  # convert your private key to hex
+        vk = sk.get_verifying_key()  # this is your verification key (public key)
+        public_key = vk.to_string().hex()
+        # we are going to encode the public key to make it shorter
+        public_key = base64.b64encode(bytes.fromhex(public_key))
     
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
