@@ -34,18 +34,21 @@ node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 2
-
-
+work = 21
+try:
+    assert work > 0 and work < 65
+except AssertionError:
+    print("Work value must be greater than 0 and less than 65")
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
     global work
-    pow = "0" * work
+    work_ez = int(work / 4) + 1
+    pow = "0" * work_ez
     pad = "1337"
     for i in range(4, 64):
-        pow += pad[i % work]
+        pow += pad[i % len(pad)]
     b = Block(0, time.time(), {
         "proof-of-work": pow,
         "transactions": None},
@@ -61,6 +64,7 @@ def create_genesis_block():
 
 # Node's blockchain copy
 BLOCKCHAIN = [create_genesis_block()]
+print(BLOCKCHAIN[0])
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
@@ -76,7 +80,7 @@ def proof_of_work(last_block, transactions):
     def random_str():
         # Generate a random size string from 3 - 27 characters long
         rand_str = ''
-        for i in range(0, 0 + secrets.randbelow(25)):
+        for i in range(0, 1 + secrets.randbelow(25)):
             rand_str += string.ascii_lowercase[secrets.randbelow(26)]  # each char is a random downcase letter [a-z]
         return rand_str
 
@@ -85,13 +89,25 @@ def proof_of_work(last_block, transactions):
         m = hashlib.sha3_256()
         data["proof-of-work"] = pow
         m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
-        return pow, m.hexdigest()
+
+        return pow, m
+
+    def leadingzeroes(digest):
+        n = 0
+        result = ''.join(format(x, '08b') for x in bytearray(digest))
+        for c in result:
+            if c == '0':
+                n += 1
+            else:
+                break
+        return n
 
     pow, pow_hash = genhash()
     start_time = time.time()
     # check to see if the first <work> characters of the string are 0
     global work
-    while not (pow_hash[0:work] == ("0" * work)):
+    lead = leadingzeroes(pow_hash.digest())
+    while lead < work :
 
         # Check if any node found the solution every 60 seconds
         if int((time.time() - start_time) % 60) == 0:
@@ -102,8 +118,9 @@ def proof_of_work(last_block, transactions):
                 return False, new_blockchain
         # generate new hash for next time
         pow, pow_hash = genhash()
+        lead = leadingzeroes(pow_hash.digest())
     # Once that hash is found, we can return it as a proof of our work
-    return pow, pow_hash
+    return pow, pow_hash.hexdigest()
 
 
 def mine(a, blockchain, node_pending_transactions):
@@ -116,7 +133,7 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-        NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + ":"+PORT+"/txion?update=" + user.public_key).content
+        NODE_PENDING_TRANSACTIONS = requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/txion?update=" + user.public_key).content
         NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
         # Then we add the mining reward
         NODE_PENDING_TRANSACTIONS.append({
@@ -128,6 +145,7 @@ def mine(a, blockchain, node_pending_transactions):
         # Note: The program will hang here until a new proof of work is found
 
         proof = proof_of_work(last_block, NODE_PENDING_TRANSACTIONS)
+
         # If we didn't guess the proof, start mining again
         if not proof[0]:
             # Update blockchain and save it to file
@@ -135,7 +153,6 @@ def mine(a, blockchain, node_pending_transactions):
             a.send(BLOCKCHAIN)
             continue
         else:
-
             # Now we can gather the data needed to create the new block
             new_block_data = {
                 "proof-of-work": proof[1],
@@ -148,7 +165,7 @@ def mine(a, blockchain, node_pending_transactions):
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block.hash)
-
+            print(mined_block.timestamp - last_block.timestamp,mined_block)
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
             # print(json.dumps({
@@ -158,12 +175,14 @@ def mine(a, blockchain, node_pending_transactions):
             #     "hash": last_block_hash
             # }) + "\n")
             a.send(BLOCKCHAIN)
-            requests.get(MINER_NODE_URL + ":"+PORT+"/blocks?update=" + user.public_key)
+            requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/blocks?update=" + user.public_key)
 
 
 def find_new_chains():
     # Get the blockchains of every other node
     other_chains = []
+    if len(other_chains) != 0:
+        print(PEER_NODES)
     for node_url in PEER_NODES:
         # Get their chains using a GET request
         blocks = None
@@ -179,6 +198,8 @@ def find_new_chains():
             if validated:
                 # Add it to our list
                 other_chains.append(blocks)
+    if len(other_chains) != 0:
+        print(PEER_NODES)
     return other_chains
 
 
@@ -266,12 +287,13 @@ def get_blocks():
             "index": str(block.index),
             "timestamp": str(block.timestamp),
             "data": str(block.data),
+            "previous": str(block.previous_hash),
             "hash": block.hash
         }
         chain_to_send_json.append(block)
 
     # Send our chain to whomever requested it
-    ip = request.remote_addr+":"+PORT
+    ip = request.remote_addr+":"+str(PORT)
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(ip)
     chain_to_send = json.dumps(chain_to_send_json)
