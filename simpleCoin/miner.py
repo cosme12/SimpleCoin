@@ -60,7 +60,6 @@ def create_genesis_block():
 
 # Node's blockchain copy
 BLOCKCHAIN = [create_genesis_block()]
-print("b{}=".format(BLOCKCHAIN[0].index),repr(BLOCKCHAIN[0]))
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
@@ -148,7 +147,6 @@ def mine(a, blockchain, node_pending_transactions):
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block.hash)
-            print("b{}=".format(mined_block.index),repr(mined_block))
 
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
