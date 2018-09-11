@@ -1,6 +1,7 @@
 import hashlib
+password = "github"
 m = hashlib.sha3_256()
-m.update("This is your password now!".encode('utf-8'))
+m.update(password.encode('utf-8'))
 secret_key = m.hexdigest()
-private_key = "b87cfd49cfe5d3d0ef64094f97e40435cd0e0087661ea97a0679b97f7f2e0fc7"
-public_key = "9ZTW4v76LnVTZUQu9mZrFru/0IEAc6xQJqb/OpSYFQ90eQvpbUZmn140WhvlidWrMsWA2jTaz8cKEtSX0nlTmw=="
+private_key = "0529e7d13b2c56ececbe1579f27bb9a4e20f404d96c64d3101af5cd9054c6b90"
+public_key = "OdKGVzvZb71iXV+HxM8tCmigtMqW0kF0fJahzZOy03xoIc8fZWjENh99qJcmZP1m6nKodgwA+wDVemDrijzunA=="
