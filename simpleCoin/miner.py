@@ -34,7 +34,7 @@ node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 21
+work = 22
 try:
     assert work > 0 and work < 65
 except AssertionError:
@@ -49,7 +49,7 @@ def create_genesis_block():
     pad = "1337"
     for i in range(4, 64):
         pow += pad[i % len(pad)]
-    b = Block(0, time.time(), {
+    b = Block(0, time.time(), "",{
         "proof-of-work": pow,
         "transactions": None},
               "0")
@@ -154,6 +154,7 @@ def mine(a, blockchain, node_pending_transactions):
             continue
         else:
             # Now we can gather the data needed to create the new block
+            new_block_effort = proof[0]
             new_block_data = {
                 "proof-of-work": proof[1],
                 "transactions": list(NODE_PENDING_TRANSACTIONS)
@@ -164,7 +165,7 @@ def mine(a, blockchain, node_pending_transactions):
             # Empty transaction list
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
-            mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block.hash)
+            mined_block = Block(new_block_index, new_block_timestamp, new_block_effort,new_block_data, last_block.hash)
             print(mined_block.timestamp - last_block.timestamp,mined_block)
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block

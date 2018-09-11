@@ -1,6 +1,6 @@
 import hashlib
 class Block:
-    def __init__(self, index, timestamp, data, previous_hash):
+    def __init__(self, index, timestamp, effort, data, previous_hash):
         """Returns a new Block object. Each block is "chained" to its previous
         by calling its unique hash.
 
@@ -20,6 +20,8 @@ class Block:
         """
         self.index = index
         self.timestamp = timestamp
+
+        self.effort = effort
         self.data = data
         '''
         data contains:
@@ -50,4 +52,4 @@ class Block:
         return "Block({},{},{},\"{}\")".format(self.index,self.timestamp,self.data,self.previous_hash,self.hash)
 
     def __str__(self):
-        return "i: {} time: {} data: {} previous: {} hash: {}".format(self.index, self.timestamp, self.data, self.previous_hash, self.hash)
+        return "i: {} time: {} effort: {} data: {} previous: {} hash: {}".format(self.index, self.timestamp, self.effort, self.data, self.previous_hash, self.hash)
