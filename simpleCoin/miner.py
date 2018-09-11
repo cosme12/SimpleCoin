@@ -34,7 +34,7 @@ node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 24
+work = 1
 try:
     assert work > 0 and work < 65
 except AssertionError:
