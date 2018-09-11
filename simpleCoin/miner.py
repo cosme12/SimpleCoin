@@ -116,7 +116,7 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-        NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + user.public_key).content
+        NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + ":"+PORT+"/txion?update=" + user.public_key).content
         NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
         # Then we add the mining reward
         NODE_PENDING_TRANSACTIONS.append({
@@ -159,7 +159,7 @@ def mine(a, blockchain, node_pending_transactions):
             #     "hash": last_block_hash
             # }) + "\n")
             a.send(BLOCKCHAIN)
-            requests.get(MINER_NODE_URL + "/blocks?update=" + user.public_key)
+            requests.get(MINER_NODE_URL + ":"+PORT+"/blocks?update=" + user.public_key)
 
 
 def find_new_chains():
@@ -169,7 +169,7 @@ def find_new_chains():
         # Get their chains using a GET request
         blocks = None
         try:
-            blocks = requests.get(node_url + "/blocks").content
+            blocks = requests.get(node_url+":"+PORT + "/blocks").content
         except:
             pass
         # Convert the JSON object to a Python dictionary
@@ -270,7 +270,7 @@ def get_blocks():
 
     # Send our chain to whomever requested it
     ip = request.remote_addr+":"+PORT
-    if ip not in PEER_NODES:
+    if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(ip)
     chain_to_send = json.dumps(chain_to_send_json)
     return chain_to_send
@@ -279,7 +279,7 @@ def get_blocks():
 @node.route('/txion', methods=['GET', 'POST'])
 def transaction():
     """Each transaction sent to this node gets validated and submitted.
-    Then it waits to be added to the blockchain. Transactions only move    coins, they don't create it.
+    Then it waits to be added to the blockchain. Transactions only move coins, they don't create it.
     """
 
     if request.method == 'POST':
@@ -295,6 +295,15 @@ def transaction():
             print("TO: {0}".format(new_txion['to']))
             print("AMOUNT: {0}\n".format(new_txion['amount']))
             # Then we let the client know it worked out
+
+            #Push to all other available nodes
+            for node_url in PEER_NODES:
+                if node_url != request.remote_addr:
+                    try:
+                        headers = {"Content-Type": "application/json"}
+                        requests.post(node_url+":"+PORT+"/txion",json = new_txion,headers = headers)
+                    except:
+                        pass
             return "Transaction submission successful\n"
         else:
             return "Transaction submission failed. Wrong signature\n"
