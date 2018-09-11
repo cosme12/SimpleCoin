@@ -13,6 +13,7 @@ import secrets
 import string
 import logging
 import simpleCoin.user as user
+from simpleCoin.Block import Block
 
 try:
     assert user.public_key != "" and user.private_key != ""
@@ -31,56 +32,20 @@ node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-
-class Block:
-    def __init__(self, index, timestamp, data, previous_hash):
-        """Returns a new Block object. Each block is "chained" to its previous
-        by calling its unique hash.
-
-        Args:
-            index (int): Block number.
-            timestamp (int): Block creation timestamp.
-            data (dict): Data to be sent.
-            previous_hash(str): String representing previous block unique hash.
-
-        Attrib:
-            index (int): Block number.
-            timestamp (int): Block creation timestamp.
-            data (dict): Data to be sent.
-            previous_hash(str): String representing previous block unique hash.
-            hash(str): Current block unique hash.
-
-        """
-        self.index = index
-        self.timestamp = timestamp
-        self.data = data
-        '''
-        data contains:
-         proof-of-work (str)
-         transations: (list?)
-        
-        '''
-        self.previous_hash = previous_hash
-        self.hash = self.hash_block()
-
-    def hash_block(self):
-        """Creates the unique hash for the block. It uses sha256."""
-        sha = hashlib.sha256()
-        sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
-        return sha.hexdigest()
-
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        return "i: {} time: {} data: {} previous: {} hash: {}".format(self.index, self.timestamp, self.data, self.previous_hash, self.hash)
+work = 2
 
 
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
+    global work
+    pow = "0" * work
+    pad = "1337"
+    for i in range(4, 64):
+        pow += pad[i % work]
     b = Block(0, time.time(), {
-        "proof-of-work": "1337",
+        "proof-of-work": pow,
         "transactions": None},
               "0")
     # print(json.dumps({
@@ -94,7 +59,7 @@ def create_genesis_block():
 
 # Node's blockchain copy
 BLOCKCHAIN = [create_genesis_block()]
-
+print("b{}=".format(BLOCKCHAIN[0].index),repr(BLOCKCHAIN[0]))
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
@@ -103,10 +68,10 @@ processed"""
 NODE_PENDING_TRANSACTIONS = []
 
 
-def proof_of_work(last_block,transactions):
-
-    data = {"transactions":transactions}
+def proof_of_work(last_block, transactions):
+    data = {"transactions": list(transactions)}
     pow = ""
+
     def random_str():
         # Generate a random size string from 3 - 27 characters long
         rand_str = ''
@@ -119,13 +84,12 @@ def proof_of_work(last_block,transactions):
         m = hashlib.sha3_256()
         data["proof-of-work"] = pow
         m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
+        return pow, m.hexdigest()
 
-        return pow,m.hexdigest()
-
-    pow,pow_hash = genhash()
+    pow, pow_hash = genhash()
     start_time = time.time()
     # check to see if the first <work> characters of the string are 0
-    work = 1
+    global work
     while not (pow_hash[0:work] == ("0" * work)):
 
         # Check if any node found the solution every 60 seconds
@@ -136,9 +100,9 @@ def proof_of_work(last_block,transactions):
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
         # generate new hash for next time
-        pow_hash = genhash()
+        pow, pow_hash = genhash()
     # Once that hash is found, we can return it as a proof of our work
-    return pow,pow_hash
+    return pow, pow_hash
 
 
 def mine(a, blockchain, node_pending_transactions):
@@ -159,7 +123,6 @@ def mine(a, blockchain, node_pending_transactions):
             "to": user.public_key,
             "amount": 1.0})
 
-
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
 
@@ -174,7 +137,7 @@ def mine(a, blockchain, node_pending_transactions):
 
             # Now we can gather the data needed to create the new block
             new_block_data = {
-                "proof-of-work": proof[0],
+                "proof-of-work": proof[1],
                 "transactions": list(NODE_PENDING_TRANSACTIONS)
             }
             new_block_index = last_block.index + 1
@@ -184,8 +147,7 @@ def mine(a, blockchain, node_pending_transactions):
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block.hash)
-            for block in BLOCKCHAIN:
-                print(block)
+            print("b{}=".format(mined_block.index),repr(mined_block))
 
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
@@ -239,10 +201,25 @@ def consensus():
         return BLOCKCHAIN
 
 
-def validate_blockchain(block):
-    """Validate the submitted chain. If hashes are not correct, return false
-    block(str): json
-    """
+def validate_blockchain(blockchain):
+    global work
+
+    previous = ""
+    for block in blockchain:
+        if not block.validate(work):
+            return False
+        if block.index == 0:
+            previous = block.hash
+            continue
+        else:
+            sha = hashlib.sha256()
+            sha.update((str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
+            if sha.hexdigest() != block.hash:
+                return False
+            if previous != block.previous_hash:
+                return False
+            previous = block.hash
+
     return True
 
 
