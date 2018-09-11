@@ -3,11 +3,12 @@ import hashlib
 import sys
 import json
 import requests
+import os
 import secrets
 import string
 import base64
 from flask import Flask, request
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Queue
 import ecdsa
 import secrets
 import string
@@ -31,7 +32,7 @@ node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 4
+work = 8
 try:
     assert work > 0 and work < 65
 except AssertionError:
@@ -63,7 +64,6 @@ def create_genesis_block():
 
 # Node's blockchain copy
 BLOCKCHAIN = [create_genesis_block()]
-print(BLOCKCHAIN[0])
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
@@ -158,7 +158,7 @@ def mine(a, blockchain, node_pending_transactions):
         if not proof[0]:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
-            a.send(BLOCKCHAIN)
+            a.put(BLOCKCHAIN)
             continue
         else:
             # Now we can gather the data needed to create the new block
@@ -186,9 +186,7 @@ def mine(a, blockchain, node_pending_transactions):
             # }) + "\n")
             # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
             #     print("mine - before a.send")
-            #     print("closed",a.closed)
-            #     print("writable", a.writable)
-            a.send(BLOCKCHAIN)
+            a.put(BLOCKCHAIN)
             # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
             #     print("mine - after a.send")
             requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/blocks?update=" + user.public_key)
@@ -202,10 +200,11 @@ def find_new_chains():
     #     print("Find New Chains")
     # Get the blockchains of every other node
     other_chains = []
-    if len(other_chains) != 0:
-        print(PEER_NODES)
+    # if len(other_chains) != 0:
+    #     print(PEER_NODES)
     for node_url in PEER_NODES:
         # Get their chains using a GET request
+
         blocks = None
         try:
             blocks = requests.get(node_url + ":" + PORT + "/blocks").content
@@ -219,8 +218,8 @@ def find_new_chains():
             if validated:
                 # Add it to our list
                 other_chains.append(blocks)
-    if len(other_chains) != 0:
-        print(PEER_NODES)
+    # if len(other_chains) != 0:
+    #     print(PEER_NODES)
     return other_chains
 
 
@@ -309,7 +308,10 @@ def get_blocks():
     #     print("get_blocks")
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
-        BLOCKCHAIN = b.recv()
+        # print("updating /blocks")
+        if not a.empty():
+            # print("b was not empty")
+            BLOCKCHAIN = a.get()
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
@@ -408,10 +410,9 @@ def get_balance():
 
 if __name__ == '__main__':
     welcome_msg()
-    # Start mining
-    a, b = Pipe()
+    a = Queue()
     p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
     p1.start()
     # Start server to receive transactions
-    p2 = Process(target=node.run(host="0.0.0.0", port=PORT), args=b)
+    p2 = Process(target=node.run(host="0.0.0.0", port=PORT), args=a)
     p2.start()
