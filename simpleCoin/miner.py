@@ -14,6 +14,7 @@ import string
 import logging
 import simpleCoin.user as user
 from simpleCoin.Block import Block
+from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES, PORT
 
 try:
     assert user.public_key != "" and user.private_key != ""
@@ -26,7 +27,7 @@ from flask_sqlalchemy import SQLAlchemy
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES
+
 
 node = Flask(__name__)
 node.config['SQLALCHEMY_DATABASE_URI'] = ""
@@ -189,6 +190,8 @@ def consensus():
     global BLOCKCHAIN
     longest_chain = BLOCKCHAIN
     for chain in other_chains:
+        if longest_chain == BLOCKCHAIN:
+            continue
         if len(longest_chain) < len(chain):
             longest_chain = chain
     # If the longest chain wasn't ours, then we set our chain to the longest
@@ -266,6 +269,9 @@ def get_blocks():
         chain_to_send_json.append(block)
 
     # Send our chain to whomever requested it
+    ip = request.remote_addr+":"+PORT
+    if ip not in PEER_NODES:
+        PEER_NODES.append(ip)
     chain_to_send = json.dumps(chain_to_send_json)
     return chain_to_send
 
@@ -275,6 +281,7 @@ def transaction():
     """Each transaction sent to this node gets validated and submitted.
     Then it waits to be added to the blockchain. Transactions only move    coins, they don't create it.
     """
+
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
@@ -340,5 +347,5 @@ if __name__ == '__main__':
     p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
     p1.start()
     # Start server to receive transactions
-    p2 = Process(target=node.run(host="0.0.0.0", port=5000), args=b)
+    p2 = Process(target=node.run(host="0.0.0.0", port=PORT), args=b)
     p2.start()

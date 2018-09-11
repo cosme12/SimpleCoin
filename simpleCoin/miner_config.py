@@ -1,11 +1,8 @@
-"""Configure this file before you start mining. Check wallet.py for
-more details.
-"""
 import simpleCoin.user
-# Write your generated adress here. All coins mined will go to this address
-
+# Port to run on
+PORT = 5000
 # Write your node url or ip. If you are running it localhost use default
-MINER_NODE_URL = "http://localhost:5000"
+MINER_NODE_URL = "http://localhost:"+str(PORT)
 
 # Store the url data of every other node in the network
 # so that we can communicate with them
