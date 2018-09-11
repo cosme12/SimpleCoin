@@ -16,6 +16,7 @@ import simpleCoin.user as user
 from simpleCoin.Block import Block
 from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES, PORT
 
+
 try:
     assert user.public_key != "" and user.private_key != ""
 except AssertionError:
@@ -209,6 +210,9 @@ def validate_blockchain(blockchain):
     for block in blockchain:
         if not block.validate(work):
             return False
+        for transaction in block.data['transactions']:
+            if transaction['from'] == "network" and transaction['amount'] != 1:
+                return False
         if block.index == 0:
             previous = block.hash
             continue

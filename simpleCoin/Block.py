@@ -24,7 +24,7 @@ class Block:
         '''
         data contains:
          proof-of-work (str)
-         transations: (list?)
+         transactions: (list?)
 
         '''
         self.previous_hash = previous_hash
