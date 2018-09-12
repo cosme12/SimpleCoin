@@ -62,8 +62,8 @@ processed"""
 NODE_PENDING_TRANSACTIONS = []
 
 BLOCKCHAIN = [create_genesis_block()]
-print("b0 =",repr(BLOCKCHAIN[0]))
-print("#",BLOCKCHAIN[0])
+# print("b0 =",repr(BLOCKCHAIN[0]))
+# print("#",BLOCKCHAIN[0])
 def proof_of_work(last_block, data):
 
     new_block_index = last_block.index + 1
@@ -149,21 +149,21 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             String
             '''
-            print("#",mined_block)
+            # print("#",mined_block)
             '''
             String
             '''
             '''
             REPR
             '''
-            print("b{} = ".format(mined_block.index), repr(mined_block))
-            if last_block.index == 1:
-                print('work = {}'.format(work))
-                print("blockchain = [", end="")
-                for i in range(0, len(BLOCKCHAIN)+1):
-                    print("b{}".format(i), end=",")
-                print("]")
-                sys.exit()
+            # print("b{} = ".format(mined_block.index), repr(mined_block))
+            # if last_block.index == 1:
+            #     print('work = {}'.format(work))
+            #     print("blockchain = [", end="")
+            #     for i in range(0, len(BLOCKCHAIN)+1):
+            #         print("b{}".format(i), end=",")
+            #     print("]")
+            #     sys.exit()
 
             '''
             END REPR
