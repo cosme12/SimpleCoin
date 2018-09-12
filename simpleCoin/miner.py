@@ -29,7 +29,7 @@ log.setLevel(logging.ERROR)
 node = Flask(__name__)
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 1
+work = 14
 try:
     assert work > 0 and work < 65
 except AssertionError:
@@ -290,14 +290,7 @@ def get_blocks():
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
     for block in chain_to_send:
-        block = {
-            "index": str(block.index),
-            "timestamp": str(block.timestamp),
-            "data": str(block.data),
-            "previous": str(block.previous_hash),
-            "hash": block.hash
-        }
-        chain_to_send_json.append(block)
+        chain_to_send_json.append(block.exportjson())
 
     # Send our chain to whomever requested it
     ip = request.remote_addr + ":" + str(PORT)

@@ -37,6 +37,16 @@ class Block():
         m.update((str(self.index) + str(self.timestamp) +str(self.proof_of_work)+ str(self.effort) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
         return m.hexdigest()
 
+    def exportjson(self):
+        return {
+            "index": str(self.index),
+            "timestamp": str(self.timestamp),
+            "pow": str(self.proof_of_work),
+            "effort": str(self.effort),
+            "data": str(self.data),
+            "previous": str(self.previous_hash),
+            "hash": self.hash
+        }
 
 
     def __repr__(self):
