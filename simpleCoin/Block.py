@@ -1,6 +1,6 @@
 import hashlib
 class Block():
-    def __init__(self, index, timestamp, pow, effort,data, previous_hash):
+    def __init__(self, index=-1, timestamp=-1, pow=-1, effort=-1,data=-1, previous_hash=-1):
         """Returns a new Block object. Each block is "chained" to its previous
         by calling its unique hash.
 
@@ -48,6 +48,14 @@ class Block():
             "hash": self.hash
         }
 
+    def importjson(self,json):
+        self.index = json['index']
+        self.timestamp = json['timestamp']
+        self.proof_of_work = json['pow']
+        self.effort = json['effort']
+        self.data = json['data']
+        self.previous_hash = json['previous']
+        self.hash = self.hash_block()
 
     def __repr__(self):
         #def __init__(self, index, timestamp, pow, effort,data, previous_hash):
@@ -64,3 +72,4 @@ def validate(block):
     pow = buildpow(block.index,block.timestamp,block.effort,block.data,block.previous_hash)
     if block.proof_of_work == pow.hexdigest():
         return True
+    return False

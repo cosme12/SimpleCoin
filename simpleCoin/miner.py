@@ -14,7 +14,7 @@ import secrets
 import string
 import logging
 import simpleCoin.user as user
-from simpleCoin.Block import Block,buildpow
+from simpleCoin.Block import Block,buildpow,validate
 from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES, PORT
 
 try:
@@ -168,9 +168,17 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             END REPR
             '''
-            BLOCKCHAIN.append(mined_block)
             a.put(mined_block)
             requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/block?send=" + user.public_key)
+
+            for node in PEER_NODES:
+                url = "http://" + node + ":" + str(PORT) + "/block"
+                data = mined_block.exportjson()
+                try:
+                    requests.post(url,json = data)
+                except:
+                    pass
+
 
 
 def find_new_chains():
@@ -275,14 +283,20 @@ def welcome_msg():
         a parallel chain.\n\n\n""")
 
 
-@node.route('/block', methods=['GET'])
+@node.route('/block', methods=['post'])
 def get_block():
-    #get incoming block
-    if request.args.get("update") == user.public_key:
-        # print("updating /blocks")
-        if not a.empty():
-            # print("b was not empty")
-            BLOCKCHAIN = a.get()
+    new_block_json = request.get_json()
+    new_block = Block().importjson(new_block_json)
+    if validate(new_block):
+        BLOCKCHAIN.append(new_block)
+    ip = request.remote_addr
+    if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
+        PEER_NODES.append(str(ip))
+        print("adding",ip,"to peers list")
+
+
+
+
 
 
 @node.route('/blocks', methods=['GET'])
@@ -304,13 +318,6 @@ def get_blocks():
 
     # Send our chain to whomever requested it
     ip = request.remote_addr
-    print(ip)
-    base_url = request.base_url
-    print(base_url)
-    referrer = request.referrer
-    print(referrer)
-    print(str(request))
-    print(repr(request))
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(str(ip))
         print("adding",ip,"to peers list")
