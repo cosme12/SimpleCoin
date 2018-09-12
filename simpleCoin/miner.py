@@ -23,13 +23,11 @@ except AssertionError:
     print("You need to generate keys in your wallet")
     sys.exit()
 
-from flask_sqlalchemy import SQLAlchemy
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 node = Flask(__name__)
-node.config['SQLALCHEMY_DATABASE_URI'] = ""
 node.config['SECRET_KEY'] = user.secret_key
 
 work = 8
@@ -49,16 +47,10 @@ def create_genesis_block():
     pad = "1337"
     for i in range(4, 64):
         pow += pad[i % len(pad)]
-    b = Block(0, time.time(), "", {
+    b = Block(0, time.time(), "e", {
         "proof-of-work": pow,
         "transactions": None},
               "0")
-    # print(json.dumps({
-    #     "index": b.index,
-    #     "timestamp": str(b.timestamp),
-    #     "data": b.data,
-    #     "hash": b.hash
-    # }) + "\n")
     return b
 
 
@@ -73,8 +65,6 @@ NODE_PENDING_TRANSACTIONS = []
 
 
 def proof_of_work(last_block, transactions):
-    # if last_block.index > 0:
-    #     print("proof of work")
     data = {"transactions": list(transactions)}
     pow = ""
 
@@ -105,7 +95,6 @@ def proof_of_work(last_block, transactions):
 
     pow, pow_hash = genhash()
     start_time = time.time()
-    # check to see if the first <work> characters of the string are 0
     global work
     lead = leadingzeroes(pow_hash.digest())
     while lead < work:
@@ -126,8 +115,6 @@ def proof_of_work(last_block, transactions):
 
 def mine(a, blockchain, node_pending_transactions):
     global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN)-1].index > 0:
-    #     print("Mine")
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
@@ -136,8 +123,6 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
-        # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-        #     print("mine - before node_pending")
 
         NODE_PENDING_TRANSACTIONS = requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
         NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
@@ -148,20 +133,13 @@ def mine(a, blockchain, node_pending_transactions):
             "to": user.public_key,
             "amount": 1.0})
 
-        # Find the proof of work for the current block being mined
-        # Note: The program will hang here until a new proof of work is found
 
         proof = proof_of_work(last_block, NODE_PENDING_TRANSACTIONS)
-        # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-        #     print("mine - after node_pending")
-        # If we didn't guess the proof, start mining again
         if not proof[0]:
-            # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
             continue
         else:
-            # Now we can gather the data needed to create the new block
             new_block_effort = proof[0]
             new_block_data = {
                 "proof-of-work": proof[1],
@@ -170,63 +148,41 @@ def mine(a, blockchain, node_pending_transactions):
             new_block_index = last_block.index + 1
             new_block_timestamp = time.time()
 
-            # Empty transaction list
             NODE_PENDING_TRANSACTIONS = []
-            # Now create the new block
 
             mined_block = Block(new_block_index, new_block_timestamp, new_block_effort, new_block_data, last_block.hash)
             print(mined_block.timestamp - last_block.timestamp, mined_block)
             BLOCKCHAIN.append(mined_block)
-            # Let the client know this node mined a block
-            # print(json.dumps({
-            #     "index": new_block_index,
-            #     "timestamp": str(new_block_timestamp),
-            #     "data": new_block_data,
-            #     "hash": last_block_hash
-            # }) + "\n")
-            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-            #     print("mine - before a.send")
             a.put(BLOCKCHAIN)
-            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-            #     print("mine - after a.send")
             requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/blocks?update=" + user.public_key)
-            # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-            #     print("mine - after requests.get")
 
 
 def find_new_chains():
-    # global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("Find New Chains")
+    #TODO maybe check the length of nodes before just downloading one at random.
+    #TODO also if it fails validation, I never want to use that person again.
     # Get the blockchains of every other node
     other_chains = []
-    # if len(other_chains) != 0:
-    #     print(PEER_NODES)
     for node_url in PEER_NODES:
-        # Get their chains using a GET request
-
-        blocks = None
+        blockchains = None
         try:
-            blocks = requests.get(node_url + ":" + PORT + "/blocks").content
+            blockchains = requests.get(node_url + ":" + PORT + "/blocks").content
         except:
             pass
         # Convert the JSON object to a Python dictionary
-        if blocks is not None:
-            blocks = json.loads(blocks)
+        if blockchains is not None:
+            blockchains = json.loads(blockchains)
             # Verify other node block is correct
-            validated = validate_blockchain(blocks)
+            validated = validate_blockchain(blockchains)
             if validated:
-                # Add it to our list
-                other_chains.append(blocks)
-    # if len(other_chains) != 0:
-    #     print(PEER_NODES)
+                other_chains.append(blockchains)
     return other_chains
 
 
 def consensus():
+    #TODO I should look at the hashes of my coins versus there's and then only validate when they differ
+    if len(PEER_NODES) == 0:
+        return False
     global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("Consensus")
     # Get the blocks from other nodes
     other_chains = find_new_chains()
     # If our chain isn't longest, then we store the longest chain
@@ -247,9 +203,6 @@ def consensus():
 
 
 def validate_blockchain(blockchain):
-    # global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("validate_blockchain")
     global work
 
     previous = ""
@@ -263,9 +216,10 @@ def validate_blockchain(blockchain):
             previous = block.hash
             continue
         else:
-            sha = hashlib.sha256()
-            sha.update((str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
-            if sha.hexdigest() != block.hash:
+            m = hashlib.sha256()
+           #m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
+            m.update((str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
+            if m.hexdigest() != block.hash:
                 return False
             if previous != block.previous_hash:
                 return False

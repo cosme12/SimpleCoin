@@ -49,7 +49,7 @@ class Block:
         return True
 
     def __repr__(self):
-        return "Block({},{},{},\"{}\")".format(self.index,self.timestamp,self.data,self.previous_hash,self.hash)
+        return "Block({},{},'{}',{},'{}')".format(self.index,self.timestamp,self.effort,self.data,self.previous_hash)
 
     def __str__(self):
         return "i: {} time: {} effort: {} data: {} previous: {} hash: {}".format(self.index, self.timestamp, self.effort, self.data, self.previous_hash, self.hash)
