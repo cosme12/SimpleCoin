@@ -14,7 +14,7 @@ import secrets
 import string
 import logging
 import simpleCoin.user as user
-from simpleCoin.Block import Block
+from simpleCoin.Block import Block,buildpow
 from simpleCoin.miner_config import MINER_NODE_URL, PEER_NODES, PORT
 
 try:
@@ -23,14 +23,13 @@ except AssertionError:
     print("You need to generate keys in your wallet")
     sys.exit()
 
-
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 node = Flask(__name__)
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 8
+work = 1
 try:
     assert work > 0 and work < 65
 except AssertionError:
@@ -47,15 +46,14 @@ def create_genesis_block():
     pad = "1337"
     for i in range(4, 64):
         pow += pad[i % len(pad)]
-    b = Block(0, time.time(), "e", {
-        "proof-of-work": pow,
+    b = Block(0, time.time(), pow, "e", {
         "transactions": None},
               "0")
     return b
 
 
 # Node's blockchain copy
-BLOCKCHAIN = [create_genesis_block()]
+
 """ Stores the transactions that this node has in a list.
 If the node you sent the transaction adds a block
 it will get accepted, but there is a chance it gets
@@ -63,10 +61,16 @@ discarded and your transaction goes back as if it was never
 processed"""
 NODE_PENDING_TRANSACTIONS = []
 
+BLOCKCHAIN = [create_genesis_block()]
+print("b0 =",repr(BLOCKCHAIN[0]))
+print("#",BLOCKCHAIN[0])
+def proof_of_work(last_block, data):
 
-def proof_of_work(last_block, transactions):
-    data = {"transactions": list(transactions)}
-    pow = ""
+    new_block_index = last_block.index + 1
+    new_block_timestamp = time.time()
+
+    NODE_PENDING_TRANSACTIONS = []
+
 
     def random_str():
         # Generate a random size string from 3 - 27 characters long
@@ -76,12 +80,8 @@ def proof_of_work(last_block, transactions):
         return rand_str
 
     def genhash():
-        pow = random_str()
-        m = hashlib.sha3_256()
-        data["proof-of-work"] = pow
-        m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
-
-        return pow, m
+        effort = random_str()
+        return effort, buildpow(new_block_index,new_block_timestamp,effort,data,last_block.hash)
 
     def leadingzeroes(digest):
         n = 0
@@ -93,7 +93,7 @@ def proof_of_work(last_block, transactions):
                 break
         return n
 
-    pow, pow_hash = genhash()
+    effort, pow_hash = genhash()
     start_time = time.time()
     global work
     lead = leadingzeroes(pow_hash.digest())
@@ -107,14 +107,17 @@ def proof_of_work(last_block, transactions):
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
         # generate new hash for next time
-        pow, pow_hash = genhash()
+        effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
+
     # Once that hash is found, we can return it as a proof of our work
-    return pow, pow_hash.hexdigest()
+    mined_block = Block(new_block_index, new_block_timestamp, pow_hash.hexdigest(),effort, data, last_block.hash)
+    return True, mined_block
 
 
 def mine(a, blockchain, node_pending_transactions):
     global BLOCKCHAIN
+    global work
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
@@ -124,7 +127,8 @@ def mine(a, blockchain, node_pending_transactions):
         # Get the last proof of work
         last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
 
-        NODE_PENDING_TRANSACTIONS = requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
+        NODE_PENDING_TRANSACTIONS = requests.get(
+            "http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
         NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
 
         # Then we add the mining reward
@@ -133,33 +137,45 @@ def mine(a, blockchain, node_pending_transactions):
             "to": user.public_key,
             "amount": 1.0})
 
-
-        proof = proof_of_work(last_block, NODE_PENDING_TRANSACTIONS)
+        new_block_data = {"transactions": list(NODE_PENDING_TRANSACTIONS)}
+        proof = proof_of_work(last_block, new_block_data)
         if not proof[0]:
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
             continue
         else:
-            new_block_effort = proof[0]
-            new_block_data = {
-                "proof-of-work": proof[1],
-                "transactions": list(NODE_PENDING_TRANSACTIONS)
-            }
-            new_block_index = last_block.index + 1
-            new_block_timestamp = time.time()
+            mined_block = proof[1]
 
-            NODE_PENDING_TRANSACTIONS = []
+            '''
+            String
+            '''
+            print("#",mined_block)
+            '''
+            String
+            '''
+            '''
+            REPR
+            '''
+            print("b{} = ".format(mined_block.index), repr(mined_block))
+            if last_block.index == 1:
+                print('work = {}'.format(work))
+                print("blockchain = [", end="")
+                for i in range(0, len(BLOCKCHAIN)+1):
+                    print("b{}".format(i), end=",")
+                print("]")
+                sys.exit()
 
-            mined_block = Block(new_block_index, new_block_timestamp, new_block_effort, new_block_data, last_block.hash)
-            print(mined_block.timestamp - last_block.timestamp, mined_block)
+            '''
+            END REPR
+            '''
             BLOCKCHAIN.append(mined_block)
             a.put(BLOCKCHAIN)
-            requests.get("http://"+MINER_NODE_URL + ":"+str(PORT)+"/blocks?update=" + user.public_key)
+            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
 
 
 def find_new_chains():
-    #TODO maybe check the length of nodes before just downloading one at random.
-    #TODO also if it fails validation, I never want to use that person again.
+    # TODO maybe check the length of nodes before just downloading one at random.
+    # TODO also if it fails validation, I never want to use that person again.
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
@@ -179,7 +195,7 @@ def find_new_chains():
 
 
 def consensus():
-    #TODO I should look at the hashes of my coins versus there's and then only validate when they differ
+    # TODO I should look at the hashes of my coins versus there's and then only validate when they differ
     if len(PEER_NODES) == 0:
         return False
     global BLOCKCHAIN
@@ -217,8 +233,9 @@ def validate_blockchain(blockchain):
             continue
         else:
             m = hashlib.sha256()
-           #m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
-            m.update((str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
+            # m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
+            m.update(
+                (str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
             if m.hexdigest() != block.hash:
                 return False
             if previous != block.previous_hash:
@@ -244,6 +261,9 @@ def validate_signature(public_key, signature, message):
         return vk.verify(signature, message.encode())
     except:
         return False
+
+
+
 
 
 def welcome_msg():
