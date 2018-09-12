@@ -169,8 +169,8 @@ def mine(a, blockchain, node_pending_transactions):
             END REPR
             '''
             BLOCKCHAIN.append(mined_block)
-            a.put(BLOCKCHAIN)
-            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
+            a.put(mined_block)
+            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/block?send=" + user.public_key)
 
 
 def find_new_chains():
@@ -275,6 +275,16 @@ def welcome_msg():
         a parallel chain.\n\n\n""")
 
 
+@node.route('/block', methods=['GET'])
+def get_block():
+    #get incoming block
+    if request.args.get("update") == user.public_key:
+        # print("updating /blocks")
+        if not a.empty():
+            # print("b was not empty")
+            BLOCKCHAIN = a.get()
+
+
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
     global BLOCKCHAIN
@@ -293,9 +303,17 @@ def get_blocks():
         chain_to_send_json.append(block.exportjson())
 
     # Send our chain to whomever requested it
-    ip = request.remote_addr + ":" + str(PORT)
+    ip = request.remote_addr
+    print(ip)
+    base_url = request.base_url
+    print(base_url)
+    referrer = request.referrer
+    print(referrer)
+    print(str(request))
+    print(repr(request))
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
-        PEER_NODES.append(ip)
+        PEER_NODES.append(str(ip))
+        print("adding",ip,"to peers list")
     chain_to_send = json.dumps(chain_to_send_json)
     return chain_to_send
 
