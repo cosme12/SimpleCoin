@@ -176,12 +176,9 @@ def mine(a, blockchain, node_pending_transactions):
             for node in PEER_NODES:
                 url = "http://" + node + ":" + str(PORT) + "/block"
                 headers = {"Content-Type": "application/json"}
-                data = mined_block.exportjson()
-                try:
-                    response = requests.post(url,json = data,header = headers)
-                    print(response)
-                except:
-                    print("cannot connect to", url)
+                data = mined_block.exportjson();
+                response = requests.post(url,json = data, headers = headers)
+                print(response)
 
 
 
