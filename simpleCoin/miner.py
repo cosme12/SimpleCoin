@@ -174,9 +174,10 @@ def mine(a, blockchain, node_pending_transactions):
 
             for node in PEER_NODES:
                 url = "http://" + node + ":" + str(PORT) + "/block"
+                headers = {"Content-Type": "application/json"}
                 data = mined_block.exportjson()
                 try:
-                    requests.post(url,json = data)
+                    requests.post(url,json = data,header = headers,verify = False)
                 except:
                     pass
 
