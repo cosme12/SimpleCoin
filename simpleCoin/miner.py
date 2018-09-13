@@ -296,12 +296,12 @@ def get_block():
         BLOCKCHAIN.append(new_block)
     else:
         print("Did not validate")
-        return False
+        return "500"
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(str(ip))
         print("adding",ip,"to peers list")
-    return True
+    return "200"
 
 
 
