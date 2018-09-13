@@ -168,8 +168,9 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             END REPR
             '''
+            BLOCKCHAIN.append(mined_block)
             a.put(mined_block)
-            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/block?send=" + user.public_key)
+            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?send=" + user.public_key)
 
             for node in PEER_NODES:
                 url = "http://" + node + ":" + str(PORT) + "/block"
@@ -285,15 +286,22 @@ def welcome_msg():
 
 @node.route('/block', methods=['post'])
 def get_block():
+    global BLOCKCHAIN
     new_block_json = request.get_json()
-    new_block = Block().importjson(new_block_json)
+    new_block = Block()
+    new_block.importjson(new_block_json)
+    print(new_block)
     if validate(new_block):
+        print("Validated")
         BLOCKCHAIN.append(new_block)
+    else:
+        print("Did not validate")
+        return False
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(str(ip))
         print("adding",ip,"to peers list")
-
+    return True
 
 
 
