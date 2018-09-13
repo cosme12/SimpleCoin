@@ -317,7 +317,9 @@ def get_blocks():
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
         # print("updating /blocks")
+        global BLOCKCHAIN
         BLOCKCHAIN = a.get()
+        print("block chain updated now",len(BLOCKCHAIN),"long")
             # print("b was not empty")
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
@@ -326,11 +328,8 @@ def get_blocks():
         chain_to_send_json.append(block.exportjson())
 
     # Send our chain to whomever requested it
-    ip = request.remote_addr
-    if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
-        PEER_NODES.append(str(ip))
-        print("adding",ip,"to peers list")
     chain_to_send = json.dumps(chain_to_send_json)
+    print("chain sent to ",request.remote_addr)
     return chain_to_send
 
 
