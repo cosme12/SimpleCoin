@@ -171,7 +171,7 @@ def mine(a, blockchain, node_pending_transactions):
 
             BLOCKCHAIN.append(mined_block)
             a.put(BLOCKCHAIN)
-            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?send=" + user.public_key)
+            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
 
             for node in PEER_NODES:
                 url = "http://" + node + ":" + str(PORT) + "/block"
