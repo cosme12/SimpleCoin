@@ -178,9 +178,10 @@ def mine(a, blockchain, node_pending_transactions):
                 headers = {"Content-Type": "application/json"}
                 data = mined_block.exportjson()
                 try:
-                    requests.post(url,json = data,header = headers,verify = False)
+                    response = requests.post(url,json = data,header = headers)
+                    print(response)
                 except:
-                    pass
+                    print("cannot connect to", url)
 
 
 
