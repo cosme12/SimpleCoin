@@ -149,7 +149,7 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             String
             '''
-            # print("#",mined_block)
+            print("#",mined_block)
             '''
             String
             '''
@@ -168,8 +168,9 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             END REPR
             '''
+
             BLOCKCHAIN.append(mined_block)
-            a.put(mined_block)
+            a.put(BLOCKCHAIN)
             requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?send=" + user.public_key)
 
             for node in PEER_NODES:
@@ -316,9 +317,8 @@ def get_blocks():
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
         # print("updating /blocks")
-        if not a.empty():
+        BLOCKCHAIN = a.get()
             # print("b was not empty")
-            BLOCKCHAIN = a.get()
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
