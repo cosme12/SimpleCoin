@@ -63,6 +63,7 @@ NODE_PENDING_TRANSACTIONS = []
 BLOCKCHAIN = []
 ROOT = False
 if len(PEER_NODES) == 0:
+    print("Root is true")
     ROOT = True
     BLOCKCHAIN.append(create_genesis_block())
 
@@ -70,8 +71,9 @@ if len(PEER_NODES) == 0:
 # print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
     global ROOT
-    new_block_index = last_block.index + 1
-    new_block_timestamp = time.time()
+    if ROOT:
+        new_block_index = last_block.index + 1
+        new_block_timestamp = time.time()
 
     NODE_PENDING_TRANSACTIONS = []
 
@@ -96,11 +98,12 @@ def proof_of_work(a,last_block, data):
             else:
                 break
         return n
-
-    effort, pow_hash = genhash()
-    start_time = time.time()
-    global work
-    lead = leadingzeroes(pow_hash.digest())
+    lead = 0
+    if ROOT:
+        effort, pow_hash = genhash()
+        start_time = time.time()
+        global work
+        lead = leadingzeroes(pow_hash.digest())
     while lead < work:
 
         # Check if any node found the solution every 60 seconds
@@ -136,19 +139,21 @@ def mine(a, blockchain, node_pending_transactions):
         is slowed down by a proof of work algorithm.
         """
         # Get the last proof of work
-        last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
+        last_block = None
+        if ROOT:
+            last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
 
-        NODE_PENDING_TRANSACTIONS = requests.get(
-            "http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
-        NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
+            NODE_PENDING_TRANSACTIONS = requests.get(
+                "http://" + MINER_NODE_URL + ":" + str(PORT) + "/txion?update=" + user.public_key).content
+            NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
 
-        # Then we add the mining reward
-        NODE_PENDING_TRANSACTIONS.append({
-            "from": "network",
-            "to": user.public_key,
-            "amount": 1.0})
+            # Then we add the mining reward
+            NODE_PENDING_TRANSACTIONS.append({
+                "from": "network",
+                "to": user.public_key,
+                "amount": 1.0})
 
-        new_block_data = {"transactions": list(NODE_PENDING_TRANSACTIONS)}
+            new_block_data = {"transactions": list(NODE_PENDING_TRANSACTIONS)}
         proof = proof_of_work(a,last_block, new_block_data)
         if not proof[0]:
             BLOCKCHAIN = proof[1]
