@@ -69,6 +69,8 @@ def buildpow(index,timestamp,effort,data,previous_hash):
     m.update((str(index) + str(timestamp) + str(effort) + str(data) + str(previous_hash)).encode('utf-8'))
     return m
 def validate(block):
+    if block.index == 0:
+        return True
     pow = buildpow(block.index,block.timestamp,block.effort,block.data,block.previous_hash)
     if block.proof_of_work == pow.hexdigest():
         return True

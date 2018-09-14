@@ -202,30 +202,43 @@ def mine(a, blockchain, node_pending_transactions):
 
 
 def find_new_chains():
-    # TODO maybe check the length of nodes before just downloading one at random.
-    # TODO also if it fails validation, I never want to use that person again.
+    print("find new chains")
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
-        blockchains = None
-        try:
-            blockchains = requests.get(node_url + ":" + PORT + "/blocks").content
-        except:
-            pass
+
+        blockchain_json = None
+        found_blockchain = []
+        url = "http://"+node_url + ":" + str(PORT) + "/blocks"
+        print("looking at ", url)
+        blockchain_json = requests.get(url).content
+
         # Convert the JSON object to a Python dictionary
-        if blockchains is not None:
-            blockchains = json.loads(blockchains)
+        if blockchain_json is not None:
+            blockchain_json = json.loads(blockchain_json)
+            for block_json in blockchain_json:
+                temp = Block()
+                temp.importjson(block_json)
+                if validate(temp):
+                    found_blockchain.append(temp)
             # Verify other node block is correct
-            validated = validate_blockchain(blockchains)
+            validated = validate_blockchain(found_blockchain)
             if validated:
-                other_chains.append(blockchains)
+                print("adding one from",node_url)
+                other_chains.append(found_blockchain)
+            else:
+                print("invalid blockchain")
+        else:
+            print("block_json does not have good data")
+            continue
     return other_chains
 
 
 def consensus():
-    # TODO I should look at the hashes of my coins versus there's and then only validate when they differ
     if len(PEER_NODES) == 0:
         return False
+    else:
+        print("looking at nodes")
     global BLOCKCHAIN
     # Get the blocks from other nodes
     other_chains = find_new_chains()
@@ -243,6 +256,7 @@ def consensus():
     else:
         # Give up searching proof, update chain and start over again
         BLOCKCHAIN = longest_chain
+        print("set a new blockchain")
         return BLOCKCHAIN
 
 
@@ -251,7 +265,7 @@ def validate_blockchain(blockchain):
 
     previous = ""
     for block in blockchain:
-        if not block.validate(work):
+        if not validate(block):
             return False
         for transaction in block.data['transactions']:
             if transaction['from'] == "network" and transaction['amount'] != 1:
