@@ -140,6 +140,7 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = None
+        new_block_data = None
         if ROOT:
             last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
 
