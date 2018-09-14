@@ -147,6 +147,8 @@ def mine(a, blockchain, node_pending_transactions):
         if not proof[0]:
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
+
+            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
             continue
         else:
             mined_block = proof[1]
@@ -294,17 +296,17 @@ def get_block():
     new_block_json = request.get_json()
     new_block = Block()
     new_block.importjson(new_block_json)
-    print(new_block)
+    # print(new_block)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
-        print("Validated")
+        # print("Validated")
         BLOCKCHAIN.append(new_block)
     else:
-        print("Did not validate")
+        # print("Did not validate")
         return "500"
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(str(ip))
-        print("adding",ip,"to peers list")
+        # print("adding",ip,"to peers list")
     return "200"
 
 
@@ -314,14 +316,12 @@ def get_block():
 @node.route('/blocks', methods=['GET'])
 def get_blocks():
     global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("get_blocks")
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
         # print("updating /blocks")
-        global BLOCKCHAIN
+
         BLOCKCHAIN = a.get()
-        print("block chain updated now",len(BLOCKCHAIN),"long")
+        # print("block chain updated now",len(BLOCKCHAIN),"long")
             # print("b was not empty")
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
@@ -331,7 +331,7 @@ def get_blocks():
 
     # Send our chain to whomever requested it
     chain_to_send = json.dumps(chain_to_send_json)
-    print("chain sent to ",request.remote_addr)
+    # print("chain sent to ",request.remote_addr)
     return chain_to_send
 
 
