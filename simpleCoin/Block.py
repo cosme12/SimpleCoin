@@ -1,4 +1,5 @@
 import hashlib
+import ast
 class Block():
     def __init__(self, index=-1, timestamp=-1, pow=-1, effort=-1,data=-1, previous_hash=-1):
         """Returns a new Block object. Each block is "chained" to its previous
@@ -53,7 +54,7 @@ class Block():
         self.timestamp = json['timestamp']
         self.proof_of_work = json['pow']
         self.effort = json['effort']
-        self.data = json['data']
+        self.data = ast.literal_eval(json['data'])
         self.previous_hash = json['previous']
         self.hash = self.hash_block()
 

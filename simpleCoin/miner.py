@@ -271,19 +271,11 @@ def validate_blockchain(blockchain):
             if transaction['from'] == "network" and transaction['amount'] != 1:
                 return False
         if block.index == 0:
-            previous = block.hash
             continue
-        else:
-            m = hashlib.sha256()
-            # m.update((str(last_block.index) + str(last_block.timestamp) + str(data) + str(last_block.previous_hash)).encode('utf-8'))
-            m.update(
-                (str(block.index) + str(block.timestamp) + str(block.data) + str(block.previous_hash)).encode('utf-8'))
-            if m.hexdigest() != block.hash:
-                return False
-            if previous != block.previous_hash:
-                return False
-            previous = block.hash
-
+        if previous != block.previous_hash:
+            return False
+        previous = block.hash
+    print("received good chain")
     return True
 
 
