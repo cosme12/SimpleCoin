@@ -60,12 +60,16 @@ it will get accepted, but there is a chance it gets
 discarded and your transaction goes back as if it was never
 processed"""
 NODE_PENDING_TRANSACTIONS = []
+BLOCKCHAIN = []
+ROOT = False
+if len(PEER_NODES) == 0:
+    ROOT = True
+    BLOCKCHAIN.append(create_genesis_block())
 
-BLOCKCHAIN = [create_genesis_block()]
 # print("b0 =",repr(BLOCKCHAIN[0]))
 # print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
-
+    global ROOT
     new_block_index = last_block.index + 1
     new_block_timestamp = time.time()
 
@@ -100,7 +104,8 @@ def proof_of_work(a,last_block, data):
     while lead < work:
 
         # Check if any node found the solution every 60 seconds
-        if int((time.time() - start_time) % 60) == 0:
+        if int((time.time() - start_time) % 60) == 0 or not ROOT:
+            ROOT = True
             # If any other node got the proof, stop searching
             new_blockchain = consensus()
             if new_blockchain:
@@ -110,6 +115,7 @@ def proof_of_work(a,last_block, data):
         effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
         if not a.empty():
+            print("got one")
             new_block = a.get()
             if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
                 BLOCKCHAIN.append(new_block)
@@ -298,11 +304,11 @@ def get_block():
     new_block.importjson(new_block_json)
     # print(new_block)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
-        # print("Validated")
+        print("Validated")
         a.put(new_block)
         BLOCKCHAIN.append(new_block)
     else:
-        # print("Did not validate")
+        print("Did not validate")
         return "500"
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
