@@ -109,6 +109,11 @@ def proof_of_work(last_block, data):
         # generate new hash for next time
         effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
+        if not a.empty():
+            new_block = a.get()
+            if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
+                BLOCKCHAIN.append(new_block)
+                return False, BLOCKCHAIN
 
     # Once that hash is found, we can return it as a proof of our work
     mined_block = Block(new_block_index, new_block_timestamp, pow_hash.hexdigest(),effort, data, last_block.hash)
@@ -149,7 +154,7 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             String
             '''
-            print("#",mined_block)
+            # print("#",mined_block)
             '''
             String
             '''
@@ -177,8 +182,7 @@ def mine(a, blockchain, node_pending_transactions):
                 url = "http://" + node + ":" + str(PORT) + "/block"
                 headers = {"Content-Type": "application/json"}
                 data = mined_block.exportjson();
-                response = requests.post(url,json = data, headers = headers)
-                print(response)
+                requests.post(url,json = data, headers = headers)
 
 
 
@@ -291,7 +295,7 @@ def get_block():
     new_block = Block()
     new_block.importjson(new_block_json)
     print(new_block)
-    if validate(new_block):
+    if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
         print("Validated")
         BLOCKCHAIN.append(new_block)
     else:
