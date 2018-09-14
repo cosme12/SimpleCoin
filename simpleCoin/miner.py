@@ -105,9 +105,10 @@ def proof_of_work(a,last_block, data):
         global work
         lead = leadingzeroes(pow_hash.digest())
     while lead < work:
-
+        print(ROOT)
         # Check if any node found the solution every 60 seconds
-        if int((time.time() - start_time) % 60) == 0 or not ROOT:
+        if not ROOT or int((time.time() - start_time) % 60) == 0:
+            print("inside if")
             ROOT = True
             # If any other node got the proof, stop searching
             new_blockchain = consensus()
