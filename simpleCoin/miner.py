@@ -299,6 +299,7 @@ def get_block():
     # print(new_block)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
         # print("Validated")
+        a.put(new_block)
         BLOCKCHAIN.append(new_block)
     else:
         # print("Did not validate")
