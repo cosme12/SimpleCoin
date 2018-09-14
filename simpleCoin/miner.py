@@ -64,7 +64,7 @@ NODE_PENDING_TRANSACTIONS = []
 BLOCKCHAIN = [create_genesis_block()]
 # print("b0 =",repr(BLOCKCHAIN[0]))
 # print("#",BLOCKCHAIN[0])
-def proof_of_work(last_block, data):
+def proof_of_work(a,last_block, data):
 
     new_block_index = last_block.index + 1
     new_block_timestamp = time.time()
@@ -143,7 +143,7 @@ def mine(a, blockchain, node_pending_transactions):
             "amount": 1.0})
 
         new_block_data = {"transactions": list(NODE_PENDING_TRANSACTIONS)}
-        proof = proof_of_work(last_block, new_block_data)
+        proof = proof_of_work(a,last_block, new_block_data)
         if not proof[0]:
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
