@@ -71,6 +71,7 @@ if len(PEER_NODES) == 0:
 # print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
     global ROOT
+    print(ROOT)
     if ROOT:
         new_block_index = last_block.index + 1
         new_block_timestamp = time.time()
@@ -111,15 +112,20 @@ def proof_of_work(a,last_block, data):
         if not ROOT or int((time.time() - start_time) % 60) == 0:
             ROOT = True
             # If any other node got the proof, stop searching
-            new_blockchain = consensus()
+            new_blockchain = consensus(a)
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
+                print("returning")
                 return False, new_blockchain
         # generate new hash for next time
         effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
         if not a.empty():
-            new_block = a.get()
+            qget = a.get()
+
+            qfrom = qget[0]
+            print("qfrom")
+            new_block = qget[1]
             if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
                 BLOCKCHAIN.append(new_block)
                 return False, BLOCKCHAIN
@@ -158,8 +164,6 @@ def mine(a, blockchain, node_pending_transactions):
         proof = proof_of_work(a,last_block, new_block_data)
         if not proof[0]:
             BLOCKCHAIN = proof[1]
-            a.put(BLOCKCHAIN)
-            requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
             print("back to mining")
             continue
         else:
@@ -189,7 +193,7 @@ def mine(a, blockchain, node_pending_transactions):
             '''
 
             BLOCKCHAIN.append(mined_block)
-            a.put(BLOCKCHAIN)
+            a.put(["mined_lower",BLOCKCHAIN])
             requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
 
             for node in PEER_NODES:
@@ -221,7 +225,6 @@ def find_new_chains():
                 if validate(temp):
                     found_blockchain.append(temp)
             # Verify other node block is correct
-            print(found_blockchain)
             validated = validate_blockchain(found_blockchain)
             if validated:
                 print("adding one from",node_url)
@@ -234,7 +237,8 @@ def find_new_chains():
     return other_chains
 
 
-def consensus():
+def consensus(a):
+    global ROOT
     if len(PEER_NODES) == 0:
         return False
     else:
@@ -243,8 +247,14 @@ def consensus():
     # Get the blocks from other nodes
     other_chains = find_new_chains()
     # If our chain isn't longest, then we store the longest chain
-    print("continue censensus with other_chains")
+    if len(other_chains) == 1:
+        BLOCKCHAIN = other_chains
+        a.put(["consensus",BLOCKCHAIN])
+        requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
+        ROOT = True
+        return other_chains[0]
     longest_chain = BLOCKCHAIN
+
     for chain in other_chains:
         if longest_chain == BLOCKCHAIN:
             continue
@@ -266,7 +276,7 @@ def validate_blockchain(blockchain):
             previous = block.hash
             continue
         else:
-            previous = block[i-1].hash
+            previous = BLOCKCHAIN[i-1].hash
         if not validate(block):
             print("block not valid",block.index)
             return False
@@ -323,7 +333,7 @@ def get_block():
     # print(new_block)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
         print("Validated")
-        a.put(new_block)
+        a.put(["get_block",new_block])
         BLOCKCHAIN.append(new_block)
     else:
         print("Did not validate")
@@ -345,10 +355,14 @@ def get_blocks():
     if request.args.get("update") == user.public_key:
         # print("updating /blocks")
 
-        BLOCKCHAIN = a.get()
+        qget= a.get()
+        qfrom = qget[0]
+        print(qfrom)
+        BLOCKCHAIN = qget[1]
         # print("block chain updated now",len(BLOCKCHAIN),"long")
             # print("b was not empty")
         print("got a blockchain")
+        print(type(BLOCKCHAIN[0]))
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
