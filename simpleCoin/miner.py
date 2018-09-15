@@ -84,8 +84,6 @@ def proof_of_work(a,last_block, data):
         return rand_str
 
     def genhash():
-        if int((time.time() - start_time) % 60) == 0:
-            print("get to mine bc is", len(BLOCKCHAIN))
         effort = random_str()
         return effort, buildpow(new_block_index,new_block_timestamp,effort,data,last_block.hash)
 
@@ -168,7 +166,7 @@ def mine(a, blockchain, node_pending_transactions):
             '''
             String
             '''
-            # print("#",mined_block)
+            print("#",mined_block)
             '''
             String
             '''
@@ -329,6 +327,9 @@ def get_blocks():
         qget= a.get()
         qfrom = qget[0]
         BLOCKCHAIN = qget[1]
+    ip = request.remote_addr
+    if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
+        print("added", ip)
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
