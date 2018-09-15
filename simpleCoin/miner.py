@@ -70,7 +70,6 @@ if len(PEER_NODES) == 0:
 # print("b0 =",repr(BLOCKCHAIN[0]))
 # print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
-    print("proof of work")
     global ROOT
     if ROOT:
         new_block_index = last_block.index + 1
@@ -80,7 +79,6 @@ def proof_of_work(a,last_block, data):
 
 
     def random_str():
-        print("random string")
         # Generate a random size string from 3 - 27 characters long
         rand_str = ''
         for i in range(0, 1 + secrets.randbelow(25)):
@@ -88,12 +86,10 @@ def proof_of_work(a,last_block, data):
         return rand_str
 
     def genhash():
-        print("genhash")
         effort = random_str()
         return effort, buildpow(new_block_index,new_block_timestamp,effort,data,last_block.hash)
 
     def leadingzeroes(digest):
-        print("leading zeroes")
         n = 0
         result = ''.join(format(x, '08b') for x in bytearray(digest))
         for c in result:
@@ -104,7 +100,6 @@ def proof_of_work(a,last_block, data):
         return n
     lead = 0
     if ROOT:
-        print("if root")
         effort, pow_hash = genhash()
         start_time = time.time()
         global work
@@ -114,7 +109,6 @@ def proof_of_work(a,last_block, data):
             ROOT = False
         # Check if any node found the solution every 60 seconds
         if not ROOT or int((time.time() - start_time) % 60) == 0:
-            print("inside if")
             ROOT = True
             # If any other node got the proof, stop searching
             new_blockchain = consensus()
@@ -122,12 +116,10 @@ def proof_of_work(a,last_block, data):
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
-        print("under if")
         # generate new hash for next time
         effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
         if not a.empty():
-            print("got one")
             new_block = a.get()
             if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
                 BLOCKCHAIN.append(new_block)
@@ -218,11 +210,13 @@ def find_new_chains():
         found_blockchain = []
         url = "http://"+node_url + ":" + str(PORT) + "/blocks"
         print("looking at ", url)
-        blockchain_json = requests.get(url).content
+        blockchain_json = requests.get(url)
 
         # Convert the JSON object to a Python dictionary
         if blockchain_json is not None:
-            blockchain_json = json.loads(blockchain_json)
+            print(blockchain_json)
+            blockchain_json = json.loads(blockchain_json.content)
+
             for block_json in blockchain_json:
                 temp = Block()
                 temp.importjson(block_json)

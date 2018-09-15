@@ -40,13 +40,13 @@ class Block():
 
     def exportjson(self):
         return {
-            "index": eval(self.index),
+            "index": str(self.index),
             "timestamp": str(self.timestamp),
             "pow": str(self.proof_of_work),
             "effort": str(self.effort),
             "data": str(self.data),
             "previous": str(self.previous_hash),
-            "hash": self.hash
+            "hash": str(self.hash)
         }
 
     def importjson(self,json):
@@ -60,7 +60,7 @@ class Block():
 
     def __repr__(self):
         #def __init__(self, index, timestamp, pow, effort,data, previous_hash):
-        return "Block({},{},'{}','{}',{},'{}') |".format(self.index,self.timestamp,self.proof_of_work,self.effort,self.data,self.previous_hash)
+        return "Block({},{},'{}','{}',{},'{}')".format(self.index,self.timestamp,self.proof_of_work,self.effort,self.data,self.previous_hash)
 
     def __str__(self):
         return "i: {} time: {} \tpow: {} effort: {} data: {} \tprevious: {} hash: {}".format(self.index, self.timestamp,self.proof_of_work, self.effort, self.data, self.previous_hash, self.hash)
