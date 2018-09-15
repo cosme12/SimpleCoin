@@ -119,6 +119,7 @@ def proof_of_work(a,last_block, data):
 
             qfrom = qget[0]
             new_block = qget[1]
+            print("received a block",qfrom)
             if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
                 BLOCKCHAIN.append(new_block)
                 return False, BLOCKCHAIN
@@ -280,17 +281,21 @@ def welcome_msg():
 @node.route('/block', methods=['post'])
 def get_block():
     global BLOCKCHAIN
+    ip = request.remote_addr
     new_block_json = request.get_json()
     new_block = Block()
+    print("trying to receieve a block from",ip)
     new_block.importjson(new_block_json)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
         a.put(["get_block",new_block])
+        if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
+            print("added",ip)
+            PEER_NODES.append(str(ip))
         BLOCKCHAIN.append(new_block)
     else:
         return "500"
-    ip = request.remote_addr
-    if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
-        PEER_NODES.append(str(ip))
+
+
     return "200"
 
 
