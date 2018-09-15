@@ -265,7 +265,7 @@ def validate_blockchain(blockchain):
     global WORK
 
     previous = ""
-    for i in range(0,BLOCKCHAIN[len(BLOCKCHAIN)]):
+    for i in range(0,len(BLOCKCHAIN)-1):
         block = BLOCKCHAIN[i]
         if block.index == 0:
             previous = block.hash
