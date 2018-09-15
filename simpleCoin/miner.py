@@ -330,6 +330,7 @@ def get_blocks():
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         print("added", ip)
+        PEER_NODES.append(str(ip))
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
