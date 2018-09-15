@@ -29,7 +29,7 @@ log.setLevel(logging.ERROR)
 node = Flask(__name__)
 node.config['SECRET_KEY'] = user.secret_key
 
-WORK = 16
+WORK = 20
 try:
     assert WORK > 0 and WORK < 65
 except AssertionError:
@@ -83,6 +83,8 @@ def proof_of_work(a,last_block, data):
         return rand_str
 
     def genhash():
+        if int((time.time() - start_time) % 60) == 0:
+            print("get to mine bc is", len(BLOCKCHAIN))
         effort = random_str()
         return effort, buildpow(new_block_index,new_block_timestamp,effort,data,last_block.hash)
 
@@ -266,7 +268,21 @@ def validate_signature(public_key, signature, message):
         return False
 
 
-
+def consensus(a):
+    global ROOT
+    if len(PEER_NODES) == 0:
+        return False
+    global BLOCKCHAIN
+    # Get the blocks from other nodes
+    other_chains = find_new_chains()
+    # If our chain isn't longest, then we store the longest chain
+    if len(other_chains) == 1:
+        BLOCKCHAIN = other_chains[0]
+        a.put(["consensus",BLOCKCHAIN])
+        requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
+        ROOT = True
+        return BLOCKCHAIN
+    return BLOCKCHAIN
 
 
 def welcome_msg():
@@ -301,21 +317,7 @@ def get_block():
     return "200"
 
 
-def consensus(a):
-    global ROOT
-    if len(PEER_NODES) == 0:
-        return False
-    global BLOCKCHAIN
-    # Get the blocks from other nodes
-    other_chains = find_new_chains()
-    # If our chain isn't longest, then we store the longest chain
-    if len(other_chains) == 1:
-        BLOCKCHAIN = other_chains[0]
-        a.put(["consensus",BLOCKCHAIN])
-        requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
-        ROOT = True
-        return BLOCKCHAIN
-    return BLOCKCHAIN
+
 
 
 @node.route('/blocks', methods=['GET'])
