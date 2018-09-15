@@ -112,7 +112,6 @@ def proof_of_work(a,last_block, data):
             ROOT = True
             # If any other node got the proof, stop searching
             new_blockchain = consensus()
-            print(new_blockchain)
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
