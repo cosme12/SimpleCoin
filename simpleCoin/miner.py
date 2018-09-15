@@ -63,15 +63,11 @@ NODE_PENDING_TRANSACTIONS = []
 BLOCKCHAIN = []
 ROOT = False
 if len(PEER_NODES) == 0:
-    print("Root is true")
     ROOT = True
     BLOCKCHAIN.append(create_genesis_block())
 
-# print("b0 =",repr(BLOCKCHAIN[0]))
-# print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
     global ROOT
-    print(ROOT)
     if ROOT:
         new_block_index = last_block.index + 1
         new_block_timestamp = time.time()
@@ -114,8 +110,6 @@ def proof_of_work(a,last_block, data):
             # If any other node got the proof, stop searching
             new_blockchain = consensus(a)
             if new_blockchain:
-                # (False: another node got proof first, new blockchain)
-                print("returning")
                 return False, new_blockchain
         # generate new hash for next time
         effort, pow_hash = genhash()
@@ -124,7 +118,6 @@ def proof_of_work(a,last_block, data):
             qget = a.get()
 
             qfrom = qget[0]
-            print("qfrom")
             new_block = qget[1]
             if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN) - 1].previous_hash:
                 BLOCKCHAIN.append(new_block)
@@ -164,7 +157,6 @@ def mine(a, blockchain, node_pending_transactions):
         proof = proof_of_work(a,last_block, new_block_data)
         if not proof[0]:
             BLOCKCHAIN = proof[1]
-            print("back to mining")
             continue
         else:
             mined_block = proof[1]
@@ -205,7 +197,6 @@ def mine(a, blockchain, node_pending_transactions):
 
 
 def find_new_chains():
-    print("find new chains")
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
@@ -213,7 +204,6 @@ def find_new_chains():
         blockchain_json = None
         found_blockchain = []
         url = "http://"+node_url + ":" + str(PORT) + "/blocks"
-        print("looking at ", url)
         blockchain_json = requests.get(url)
 
         # Convert the JSON object to a Python dictionary
@@ -227,12 +217,7 @@ def find_new_chains():
             # Verify other node block is correct
             validated = validate_blockchain(found_blockchain)
             if validated:
-                print("adding one from",node_url)
                 other_chains.append(found_blockchain)
-            else:
-                print("invalid blockchain")
-        else:
-            print("block_json does not have good data")
             continue
     return other_chains
 
@@ -253,26 +238,19 @@ def validate_blockchain(blockchain):
         else:
             previous = BLOCKCHAIN[i-1].hash
         if not validate(block):
-            print("block not valid",block.index)
             return False
 
         transactions = block.data['transactions']
 
         for transaction in transactions:
             if transaction['from'] == "network" and transaction['amount'] != 1:
-                print("transaction not valid",block.index)
                 return False
         if previous != block.previous_hash:
-            print("previous hash not valid",block.index)
             return False
-    print("received good chain")
     return True
 
 
 def validate_signature(public_key, signature, message):
-    # global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("verify_signature")
     """Verifies if the signature is correct. This is used to prove
     it's you (and not someone else) trying to do a transaction with your
     address. Called when a user tries to submit a new transaction.
@@ -305,18 +283,14 @@ def get_block():
     new_block_json = request.get_json()
     new_block = Block()
     new_block.importjson(new_block_json)
-    # print(new_block)
     if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
-        print("Validated")
         a.put(["get_block",new_block])
         BLOCKCHAIN.append(new_block)
     else:
-        print("Did not validate")
         return "500"
     ip = request.remote_addr
     if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
         PEER_NODES.append(str(ip))
-        # print("adding",ip,"to peers list")
     return "200"
 
 
@@ -324,8 +298,6 @@ def consensus(a):
     global ROOT
     if len(PEER_NODES) == 0:
         return False
-    else:
-        print("looking at nodes")
     global BLOCKCHAIN
     # Get the blocks from other nodes
     other_chains = find_new_chains()
@@ -353,16 +325,9 @@ def get_blocks():
     global BLOCKCHAIN
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == user.public_key:
-        # print("updating /blocks")
-
         qget= a.get()
         qfrom = qget[0]
-        print("get_block",qfrom)
         BLOCKCHAIN = qget[1]
-        # print("block chain updated now",len(BLOCKCHAIN),"long")
-            # print("b was not empty")
-        print("got a blockchain")
-        print(type(BLOCKCHAIN[0]))
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
@@ -371,16 +336,11 @@ def get_blocks():
 
     # Send our chain to whomever requested it
     chain_to_send = json.dumps(chain_to_send_json)
-    # print("chain sent to ",request.remote_addr)
     return chain_to_send
 
 
 @node.route('/txion', methods=['GET', 'POST'])
 def transaction():
-    # global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    # print("transaction")
-
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
@@ -417,8 +377,6 @@ def transaction():
 @node.route('/balances', methods=['GET'])
 def get_balance():
     global BLOCKCHAIN
-    # if BLOCKCHAIN[len(BLOCKCHAIN) - 1].index > 0:
-    #     print("Balances")
     working = BLOCKCHAIN
     balances = {}
     balances_json = []
