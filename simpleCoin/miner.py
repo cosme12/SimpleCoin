@@ -29,9 +29,9 @@ log.setLevel(logging.ERROR)
 node = Flask(__name__)
 node.config['SECRET_KEY'] = user.secret_key
 
-work = 14
+WORK = 16
 try:
-    assert work > 0 and work < 65
+    assert WORK > 0 and WORK < 65
 except AssertionError:
     print("Work value must be greater than 0 and less than 65")
 
@@ -40,8 +40,8 @@ def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
-    global work
-    work_ez = int(work / 4) + 1
+    global WORK
+    work_ez = int(WORK / 4) + 1
     pow = "0" * work_ez
     pad = "1337"
     for i in range(4, 64):
@@ -102,9 +102,9 @@ def proof_of_work(a,last_block, data):
     if ROOT:
         effort, pow_hash = genhash()
         start_time = time.time()
-        global work
+        global WORK
         lead = leadingzeroes(pow_hash.digest())
-    while lead < work:
+    while lead < WORK:
         if len(BLOCKCHAIN) == 0:
             ROOT = False
         # Check if any node found the solution every 60 seconds
@@ -131,7 +131,7 @@ def proof_of_work(a,last_block, data):
 
 def mine(a, blockchain, node_pending_transactions):
     global BLOCKCHAIN
-    global work
+    global WORK
     NODE_PENDING_TRANSACTIONS = node_pending_transactions
     while True:
         """Mining is the only way that new coins can be created.
@@ -262,13 +262,16 @@ def consensus():
 
 
 def validate_blockchain(blockchain):
-    global work
+    global WORK
 
     previous = ""
-    for block in blockchain:
+    for i in range(0,BLOCKCHAIN[len(BLOCKCHAIN)]):
+        block = BLOCKCHAIN[i]
         if block.index == 0:
             previous = block.hash
             continue
+        else:
+            previous = block[i-1].hash
         if not validate(block):
             print("block not valid",block.index)
             return False
