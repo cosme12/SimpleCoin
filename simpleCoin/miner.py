@@ -251,15 +251,9 @@ def consensus():
         if len(longest_chain) < len(chain):
             longest_chain = chain
     # If the longest chain wasn't ours, then we set our chain to the longest
-    if longest_chain == BLOCKCHAIN:
-        # Keep searching for proof
-        print("did not find one")
-        return False
-    else:
-        # Give up searching proof, update chain and start over again
-        BLOCKCHAIN = longest_chain
-        print("set a new blockchain")
-        return BLOCKCHAIN
+    BLOCKCHAIN = longest_chain
+    return BLOCKCHAIN
+
 
 
 def validate_blockchain(blockchain):
