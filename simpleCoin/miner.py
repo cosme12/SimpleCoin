@@ -160,6 +160,7 @@ def mine(a, blockchain, node_pending_transactions):
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
             requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
+            print("back to mining")
             continue
         else:
             mined_block = proof[1]
@@ -213,9 +214,7 @@ def find_new_chains():
 
         # Convert the JSON object to a Python dictionary
         if blockchain_json is not None:
-            print(blockchain_json)
             blockchain_json = json.loads(blockchain_json.content)
-
             for block_json in blockchain_json:
                 temp = Block()
                 temp.importjson(block_json)
@@ -244,6 +243,7 @@ def consensus():
     # Get the blocks from other nodes
     other_chains = find_new_chains()
     # If our chain isn't longest, then we store the longest chain
+    print("continue censensus with other_chains")
     longest_chain = BLOCKCHAIN
     for chain in other_chains:
         if longest_chain == BLOCKCHAIN:
@@ -253,6 +253,7 @@ def consensus():
     # If the longest chain wasn't ours, then we set our chain to the longest
     if longest_chain == BLOCKCHAIN:
         # Keep searching for proof
+        print("did not find one")
         return False
     else:
         # Give up searching proof, update chain and start over again
