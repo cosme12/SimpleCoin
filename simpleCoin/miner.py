@@ -67,6 +67,7 @@ if len(PEER_NODES) == 0:
     BLOCKCHAIN.append(create_genesis_block())
 
 def proof_of_work(a,last_block, data):
+    start_time = time.time()
     global ROOT
     if ROOT:
         new_block_index = last_block.index + 1
@@ -100,7 +101,7 @@ def proof_of_work(a,last_block, data):
     lead = 0
     if ROOT:
         effort, pow_hash = genhash()
-        start_time = time.time()
+
         global WORK
         lead = leadingzeroes(pow_hash.digest())
     while lead < WORK:
