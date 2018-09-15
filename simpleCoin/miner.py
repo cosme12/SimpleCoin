@@ -237,32 +237,7 @@ def find_new_chains():
     return other_chains
 
 
-def consensus(a):
-    global ROOT
-    if len(PEER_NODES) == 0:
-        return False
-    else:
-        print("looking at nodes")
-    global BLOCKCHAIN
-    # Get the blocks from other nodes
-    other_chains = find_new_chains()
-    # If our chain isn't longest, then we store the longest chain
-    if len(other_chains) == 1:
-        BLOCKCHAIN = other_chains
-        a.put(["consensus",BLOCKCHAIN])
-        requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
-        ROOT = True
-        return other_chains[0]
-    longest_chain = BLOCKCHAIN
 
-    for chain in other_chains:
-        if longest_chain == BLOCKCHAIN:
-            continue
-        if len(longest_chain) < len(chain):
-            longest_chain = chain
-    # If the longest chain wasn't ours, then we set our chain to the longest
-    BLOCKCHAIN = longest_chain
-    return BLOCKCHAIN
 
 
 
@@ -345,7 +320,32 @@ def get_block():
     return "200"
 
 
+def consensus(a):
+    global ROOT
+    if len(PEER_NODES) == 0:
+        return False
+    else:
+        print("looking at nodes")
+    global BLOCKCHAIN
+    # Get the blocks from other nodes
+    other_chains = find_new_chains()
+    # If our chain isn't longest, then we store the longest chain
+    if len(other_chains) == 1:
+        BLOCKCHAIN = other_chains[0]
+        a.put(["consensus",BLOCKCHAIN])
+        requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
+        ROOT = True
+        return BLOCKCHAIN
+    longest_chain = BLOCKCHAIN
 
+    for chain in other_chains:
+        if longest_chain == BLOCKCHAIN:
+            continue
+        if len(longest_chain) < len(chain):
+            longest_chain = chain
+    # If the longest chain wasn't ours, then we set our chain to the longest
+    BLOCKCHAIN = longest_chain
+    return BLOCKCHAIN
 
 
 @node.route('/blocks', methods=['GET'])
@@ -357,7 +357,7 @@ def get_blocks():
 
         qget= a.get()
         qfrom = qget[0]
-        print(qfrom)
+        print("get_block",qfrom)
         BLOCKCHAIN = qget[1]
         # print("block chain updated now",len(BLOCKCHAIN),"long")
             # print("b was not empty")
