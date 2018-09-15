@@ -40,7 +40,7 @@ class Block():
 
     def exportjson(self):
         return {
-            "index": str(self.index),
+            "index": eval(self.index),
             "timestamp": str(self.timestamp),
             "pow": str(self.proof_of_work),
             "effort": str(self.effort),
@@ -50,17 +50,17 @@ class Block():
         }
 
     def importjson(self,json):
-        self.index = json['index']
-        self.timestamp = json['timestamp']
-        self.proof_of_work = json['pow']
-        self.effort = json['effort']
+        self.index = int(json['index'])
+        self.timestamp = float(json['timestamp'])
+        self.proof_of_work = str(json['pow'])
+        self.effort = str(json['effort'])
         self.data = ast.literal_eval(json['data'])
-        self.previous_hash = json['previous']
+        self.previous_hash = str(json['previous'])
         self.hash = self.hash_block()
 
     def __repr__(self):
         #def __init__(self, index, timestamp, pow, effort,data, previous_hash):
-        return "Block({},{},'{}','{}',{},'{}')".format(self.index,self.timestamp,self.proof_of_work,self.effort,self.data,self.previous_hash)
+        return "Block({},{},'{}','{}',{},'{}') |".format(self.index,self.timestamp,self.proof_of_work,self.effort,self.data,self.previous_hash)
 
     def __str__(self):
         return "i: {} time: {} \tpow: {} effort: {} data: {} \tprevious: {} hash: {}".format(self.index, self.timestamp,self.proof_of_work, self.effort, self.data, self.previous_hash, self.hash)
@@ -75,4 +75,5 @@ def validate(block):
     pow = buildpow(block.index,block.timestamp,block.effort,block.data,block.previous_hash)
     if block.proof_of_work == pow.hexdigest():
         return True
+    print("bad block",block.index)
     return False

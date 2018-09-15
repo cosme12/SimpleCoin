@@ -70,6 +70,7 @@ if len(PEER_NODES) == 0:
 # print("b0 =",repr(BLOCKCHAIN[0]))
 # print("#",BLOCKCHAIN[0])
 def proof_of_work(a,last_block, data):
+    print("proof of work")
     global ROOT
     if ROOT:
         new_block_index = last_block.index + 1
@@ -79,6 +80,7 @@ def proof_of_work(a,last_block, data):
 
 
     def random_str():
+        print("random string")
         # Generate a random size string from 3 - 27 characters long
         rand_str = ''
         for i in range(0, 1 + secrets.randbelow(25)):
@@ -86,10 +88,12 @@ def proof_of_work(a,last_block, data):
         return rand_str
 
     def genhash():
+        print("genhash")
         effort = random_str()
         return effort, buildpow(new_block_index,new_block_timestamp,effort,data,last_block.hash)
 
     def leadingzeroes(digest):
+        print("leading zeroes")
         n = 0
         result = ''.join(format(x, '08b') for x in bytearray(digest))
         for c in result:
@@ -100,21 +104,25 @@ def proof_of_work(a,last_block, data):
         return n
     lead = 0
     if ROOT:
+        print("if root")
         effort, pow_hash = genhash()
         start_time = time.time()
         global work
         lead = leadingzeroes(pow_hash.digest())
     while lead < work:
-        print(ROOT)
+        if len(BLOCKCHAIN) == 0:
+            ROOT = False
         # Check if any node found the solution every 60 seconds
         if not ROOT or int((time.time() - start_time) % 60) == 0:
             print("inside if")
             ROOT = True
             # If any other node got the proof, stop searching
             new_blockchain = consensus()
+            print(new_blockchain)
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
+        print("under if")
         # generate new hash for next time
         effort, pow_hash = genhash()
         lead = leadingzeroes(pow_hash.digest())
@@ -160,7 +168,6 @@ def mine(a, blockchain, node_pending_transactions):
         if not proof[0]:
             BLOCKCHAIN = proof[1]
             a.put(BLOCKCHAIN)
-
             requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
             continue
         else:
@@ -222,6 +229,7 @@ def find_new_chains():
                 if validate(temp):
                     found_blockchain.append(temp)
             # Verify other node block is correct
+            print(found_blockchain)
             validated = validate_blockchain(found_blockchain)
             if validated:
                 print("adding one from",node_url)
@@ -265,16 +273,22 @@ def validate_blockchain(blockchain):
 
     previous = ""
     for block in blockchain:
-        if not validate(block):
-            return False
-        for transaction in block.data['transactions']:
-            if transaction['from'] == "network" and transaction['amount'] != 1:
-                return False
         if block.index == 0:
+            previous = block.hash
             continue
-        if previous != block.previous_hash:
+        if not validate(block):
+            print("block not valid",block.index)
             return False
-        previous = block.hash
+
+        transactions = block.data['transactions']
+
+        for transaction in transactions:
+            if transaction['from'] == "network" and transaction['amount'] != 1:
+                print("transaction not valid",block.index)
+                return False
+        if previous != block.previous_hash:
+            print("previous hash not valid",block.index)
+            return False
     print("received good chain")
     return True
 
@@ -343,6 +357,7 @@ def get_blocks():
         BLOCKCHAIN = a.get()
         # print("block chain updated now",len(BLOCKCHAIN),"long")
             # print("b was not empty")
+        print("got a blockchain")
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
