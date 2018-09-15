@@ -286,13 +286,15 @@ def get_block():
     new_block = Block()
     print("trying to receieve a block from",ip)
     new_block.importjson(new_block_json)
-    if validate(new_block) and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
+    validation = validate(new_block)
+    if validation and new_block.previous_hash == BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash:
         a.put(["get_block",new_block])
         if str(ip) != "127.0.0.1" and ip not in PEER_NODES:
             print("added",ip)
             PEER_NODES.append(str(ip))
         BLOCKCHAIN.append(new_block)
     else:
+        print("val",validation, "nbph",new_block.previous_hash,"aph",BLOCKCHAIN[len(BLOCKCHAIN)-1].previous_hash)
         return "500"
 
 
@@ -313,15 +315,6 @@ def consensus(a):
         requests.get("http://" + MINER_NODE_URL + ":" + str(PORT) + "/blocks?update=" + user.public_key)
         ROOT = True
         return BLOCKCHAIN
-    longest_chain = BLOCKCHAIN
-
-    for chain in other_chains:
-        if longest_chain == BLOCKCHAIN:
-            continue
-        if len(longest_chain) < len(chain):
-            longest_chain = chain
-    # If the longest chain wasn't ours, then we set our chain to the longest
-    BLOCKCHAIN = longest_chain
     return BLOCKCHAIN
 
 
