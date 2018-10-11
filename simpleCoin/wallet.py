@@ -64,9 +64,10 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
                     wallet = get_data_from_file(wallet_file)
                     break
                 except InvalidToken:
-                        print("There was an error decrypting the file.\nEither the password is not correct or the file is corrupted.")
+                        print("There was an error decrypting the private key.\nEither the password is not correct or the file is corrupted.")
                 except FileNotFoundError:
                     print("There was an error finding the file.")
+
         addr_from, private_key = wallet["public_key"], wallet["private_key"]
         addr_to = input("To: introduce destination wallet address\n")
         amount = input("Amount: number stating how much do you want to send\n")
@@ -84,21 +85,20 @@ def get_data_from_file(wallet_file):
     
             {
                 "public_key":"publicKey",
-                "private_key":"privateKey"
+                "private_key":"privateKey",
+                "encryption":True or False
             }"""
     with open(wallet_file, "r") as f:
-        content = f.read()# Gets the content of the .wallet file
+        content = loads(f.read())# Gets the content of the .wallet file
         f.close()
-    if content[0:10] == "ENCRYPTED:":# If the key is encrypted
-        password = input("The wallet file detected is encrypted. Please, input the password: ")
+    if content["encryption"]:# If the private key is encrypted
+        password = input("The wallet file detected has been encrypted. Please, input the password: ")
         key = gen_encryption_key(password)# Get the password key
         f = Fernet(key)# Create the decryption object with the key
-        # Decrypt the json content, (after 'ENCRYPTED:') and loads it into a python object
-        wallet = loads( f.decrypt( content[9:].encode() ).decode() )
+        content["private_key"] = f.decrypt( content["private_key"].encode() ).decode()
     else:# If not, just loads the json object
         print("Not-encrypted wallet file detected.")
-        wallet = loads(content)
-    return wallet
+    return content
 
 def send_transaction(addr_from, private_key, addr_to, amount):
     """Sends your transaction to different nodes. Once any of the nodes manage
@@ -163,7 +163,7 @@ def generate_ECDSA_keys():
     # The private and public key are assembled into a dictionary.
     # Dumping and loading this object with json format will make
     # them easier to manage.
-    content = {"public_key":public_key.decode(), "private_key":private_key}
+    content = {"public_key":public_key.decode(), "private_key":private_key, "encryption":False}
 
     filename = input("Write the name of your new address: ") + ".wallet"
     password = input("""
@@ -177,11 +177,10 @@ Password: """)
     if password != "":
         key = gen_encryption_key(password)# Get the key version of the password
         f = Fernet(key)# Create encryption object with the key version of the password
-        content = f.encrypt(dumps(content).encode())# Use it to encrypt the wallet file
+        content["private_key"] = f.encrypt(content["private_key"].encode()).decode()# Use it to encrypt the private key
+        content["encryption"] = True# Make the program know that this file requires a password.
         with open(filename, "w") as f:
-            # The encrypted key is written in the file after a 'ENCRYPTED:' tag.
-            # This tag is used to make the program know that this key requires a password.
-            f.write("ENCRYPTED:" + content.decode())
+            f.write(dumps(content))
     else:
         with open(filename, "w") as f:
             f.write(dumps(content))
