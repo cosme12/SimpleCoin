@@ -1,1 +1,5 @@
 *.pyc
+*scratch.py
+xyf.txt
+*user.py
+*miner_config.py
