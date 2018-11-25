@@ -14,12 +14,11 @@ You can find more information in the original [Bitcoin Paper](https://bitcoin.or
 
 ## How to run it
 
-First, install pipenv and requirements ```requirements.txt```.
+First, install pipenv and requirements.
 
 ```
 pip install --user pipenv
-touch Pipfile
-pipenv install -r requirements.txt
+pipenv install
 ```
 
 Then you have 2 options:
