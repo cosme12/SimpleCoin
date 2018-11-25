@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+ecdsa = "*"
+requests = "*"
+Flask = "*"
+
+[requires]
+python_version = "3.6"
+
+[scripts]
+miner = "python3 simpleCoin/miner.py"
+wallet = "python3 simpleCoin/wallet.py"

@@ -14,17 +14,20 @@ You can find more information in the original [Bitcoin Paper](https://bitcoin.or
 
 ## How to run it
 
-First, install ```requirements.txt```.
+First, install pipenv and requirements ```requirements.txt```.
 
 ```
-pip install -r requirements.txt
+pip install --user pipenv
+touch Pipfile
+pipenv install -r requirements.txt
 ```
 
 Then you have 2 options:
 
 - Run ```miner.py``` to become a node and start mining
+- ```pipenv run miner```
 - Run ```wallet.py``` to become a user and send transactions (to send transactions you must run a node, in other words, you must run ```miner.py``` too)
-
+- ```pipenv run wallet```
 > Important: DO NOT run it in the python IDLE, run it in your console. The ```miner.py``` uses parallel processing that doesn't work in the python IDLE.
 
 ## How this code work?
