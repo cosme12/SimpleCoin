@@ -103,7 +103,7 @@ def generate_ECDSA_keys():
     public_key = vk.to_string().hex()
     #we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
-    
+
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
         f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
@@ -133,4 +133,4 @@ if __name__ == '__main__':
         Make sure you are using the latest version or you may end in
         a parallel chain.\n\n\n""")
     wallet()
-    input("Press any key to exit...")
+    input("Press ENTER to exit...")
