@@ -184,6 +184,7 @@ Password: """)
     else:
         with open(filename, "w") as f:
             f.write(dumps(content))
+
     print("Your new address and private key are now in the file {0}".format(filename))
 
 def sign_ECDSA_msg(private_key):
@@ -210,4 +211,4 @@ if __name__ == '__main__':
         Make sure you are using the latest version or you may end in
         a parallel chain.\n\n\n""")
     wallet()
-    input("Press any key to exit...")
+    input("Press ENTER to exit...")
