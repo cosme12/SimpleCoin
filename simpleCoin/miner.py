@@ -225,13 +225,18 @@ def transaction():
             # Then we let the client know it worked out
             return "Transaction submission successful\n"
         else:
-            return "Transaction submission failed. Wrong signature\n"
+            return "Transaction submission failed. Wrong signature\n"      
+
+    elif request.method == 'POST' and request.args.post("update") !=MINER_ADDRESS:
+        print("Transaction submission failed. Address not verified\n")
+
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS)
         # Empty transaction list
         NODE_PENDING_TRANSACTIONS[:] = []
         return pending
+
 
 
 def validate_signature(public_key, signature, message):
