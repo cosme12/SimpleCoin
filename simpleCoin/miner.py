@@ -93,7 +93,7 @@ def mine(a, blockchain, node_pending_transactions):
         is slowed down by a proof of work algorithm.
         """
         # Get the last proof of work
-        last_block = BLOCKCHAIN[len(BLOCKCHAIN) - 1]
+        last_block = BLOCKCHAIN[-1]
         last_proof = last_block.data['proof-of-work']
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
