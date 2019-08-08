@@ -24,6 +24,7 @@ for block in chain:
     else:
         balance[rx] = amount
 for adress in balance:
-    print(adress)
-    print(balance[adress])
-    print("\n")
+    if adress != "network":
+        print(adress)
+        print(balance[adress])
+        print("\n")
