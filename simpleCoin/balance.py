@@ -16,11 +16,11 @@ for block in chain:
     rx = transaction.get("to")
     amount = transaction.get("amount")
     if tx in balance:
-        balance[tx] = balance[tx]-amount
+        balance[tx] = balance[tx]-int(amount)
     else:
         balance[tx] = 0-amount
     if rx in balance:
-        balance[rx] = balance[rx]+amount
+        balance[rx] = balance[rx]+int(amount)
     else:
         balance[rx] = amount
 for adress in balance:
