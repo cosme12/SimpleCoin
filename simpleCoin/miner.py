@@ -108,7 +108,7 @@ def mine(a, blockchain, node_pending_transactions):
             # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
             # First we load all pending transactions sent to the node server
-            NODE_PENDING_TRANSACTIONS = requests.get(MINER_NODE_URL + "/txion?update=" + MINER_ADDRESS).content
+            NODE_PENDING_TRANSACTIONS = requests.get(url = MINER_NODE_URL + '/txion', params = {'update':MINER_ADDRESS}).content
             NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
             # Then we add the mining reward
             NODE_PENDING_TRANSACTIONS.append({
@@ -136,15 +136,14 @@ def mine(a, blockchain, node_pending_transactions):
               "hash": last_block_hash
             }) + "\n")
             a.send(BLOCKCHAIN)
-            requests.get(MINER_NODE_URL + "/blocks?update=" + MINER_ADDRESS)
-
+            requests.get(url = MINER_NODE_URL + '/blocks', params = {'update':MINER_ADDRESS})
 
 def find_new_chains():
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
         # Get their chains using a GET request
-        block = requests.get(node_url + "/blocks").content
+        block = requests.get(url = node_url + "/blocks").content
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
         # Verify other node block is correct
