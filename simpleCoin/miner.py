@@ -7,6 +7,7 @@ from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
 
+
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
 node = Flask(__name__)
@@ -222,6 +223,15 @@ def transaction():
             print("TO: {0}".format(new_txion['to']))
             print("AMOUNT: {0}\n".format(new_txion['amount']))
             # Then we let the client know it worked out
+            #mycode-----------------------------------------------------------
+            f = open("transactions_share.txt", "w")
+            #f = open(r"C:\transactions_share.txt", "w")
+            print("New transaction", file=f)
+            print("FROM: {0}".format(new_txion['from']), file=f)
+            print("TO: {0}".format(new_txion['to']), file=f)
+            print("AMOUNT: {0}\n".format(new_txion['amount']), file=f)
+            f.close()
+            #mycode------------------------------------------------------------
             return "Transaction submission successful\n"
         else:
             return "Transaction submission failed. Wrong signature\n"
