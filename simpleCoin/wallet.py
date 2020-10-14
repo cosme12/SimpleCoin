@@ -17,20 +17,94 @@ blockchain but other nodes still will have it pending. If any node see that your
 transaction with same timestamp was added, they should remove it from the
 node_pending_transactions list to avoid it get processed more than 1 time.
 """
-
+import sqlite3
 import requests
 import time
 import base64
 import ecdsa
 
 
+# my code first enhancement-------------------------------------------------------------------------------------------------------------
+def acc_check():
+    login_check = input("Do you have an account?(y/n): ")
+    if login_check.lower() == 'y':
+        login()
+    elif login_check.lower() == 'n':
+        reg_check = input("Do you want to register?(y/n): ")
+        if reg_check.lower() == 'y':
+            reg()
+        else:
+            print("Goodbye")
+            end()
+    else:
+        print("Invalid input")
+        end()
+
+
+def reg():
+    with sqlite3.connect("accounts.db") as db:
+        cursor = db.cursor()
+    # create table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user(
+    email VARCHAR(50) PRIMARY KEY,
+    firstname VARCHAR(20) NOT NULL,
+    surname VARCHAR(20) NOT NULL,
+    password VARCHAR(20) NOT NULL);
+    ''')
+    # insert values to table from user input
+    u_email = input('Please Enter Your Email: ')
+    u_fname = input('Please Enter Your First Name: ')
+    u_lname = input('Please Enter Your Last Name: ')
+    u_password = input('Please Enter Your Password: ')
+    cursor.execute(""" 
+    INSERT INTO user(email, firstname, surname, password)
+    VALUES (?,?,?,?)   
+    """, (u_email, u_fname, u_lname, u_password))
+    db.commit()
+    print("Data entered successfully")
+    db.close()
+    print("Please Login Your Account")
+    login()
+
+
+def login():
+    email = input("Enter Your Email: ")
+    password = input("Enter Your password: ")
+    with sqlite3.connect("accounts.db") as db:
+        cursor = db.cursor()
+    find_user = ("SELECT * FROM user WHERE email = ? AND password = ?")
+    cursor.execute(find_user, [(email), (password)])
+    results = cursor.fetchall()
+
+    if results:
+        for i in results:
+            print("Welcome " + i[2])
+            wallet()  # connect with main program here
+
+    else:
+        print("Email and password not recognised")
+        again = input("Do you want to try again?(y/n): ")
+        if again.lower() == "n":
+            print("Goodbye")
+            end()
+        elif again.lower() == "y":
+            login()
+        else:
+            end()
+
+
+# my code first enhancement-------------------------------------------------------------------------------------------------------------
 def wallet():
     response = None
-    while response not in ["1", "2", "3"]:
+    while response not in ["1", "2", "3", "4", "5"]:
         response = input("""What do you want to do?
         1. Generate new wallet
         2. Send coins to another wallet
-        3. Check transactions\n""")
+        3. Check transactions
+        4. Check transactions history (enhanced)
+        5. Exit program\n""")
+
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -48,6 +122,10 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
+    # elif response == "4":
+    # trans_improved()
+    elif response == "5":
+        end()
     else:  # Will always occur when response == 3.
         check_transactions()
 
@@ -87,6 +165,7 @@ def check_transactions():
     """
     res = requests.get('http://localhost:5000/blocks')
     print(res.text)
+    wallet()
 
 
 def generate_ECDSA_keys():
@@ -97,17 +176,19 @@ def generate_ECDSA_keys():
     private_key: str
     public_ley: base64 (to make it shorter)
     """
-    sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1) #this is your sign (private key)
-    private_key = sk.to_string().hex() #convert your private key to hex
-    vk = sk.get_verifying_key() #this is your verification key (public key)
+    sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)  # this is your sign (private key)
+    private_key = sk.to_string().hex()  # convert your private key to hex
+    vk = sk.get_verifying_key()  # this is your verification key (public key)
     public_key = vk.to_string().hex()
-    #we are going to encode the public key to make it shorter
+    # we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
 
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
         f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
     print("Your new address and private key are now in the file {0}".format(filename))
+    wallet()
+
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
@@ -125,6 +206,11 @@ def sign_ECDSA_msg(private_key):
     return signature, message
 
 
+def end():
+    print("This program is closed.")
+    exit()
+
+
 if __name__ == '__main__':
     print("""       =========================================\n
         SIMPLE COIN v1.0.0 - BLOCKCHAIN SYSTEM\n
@@ -132,5 +218,5 @@ if __name__ == '__main__':
         You can find more help at: https://github.com/cosme12/SimpleCoin\n
         Make sure you are using the latest version or you may end in
         a parallel chain.\n\n\n""")
-    wallet()
+    acc_check()
     input("Press ENTER to exit...")
