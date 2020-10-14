@@ -51,7 +51,7 @@ def create_genesis_block():
     return Block(0, time.time(), {
         "proof-of-work": 9,
         "transactions": None},
-        "0")
+                 "0")
 
 
 # Node's blockchain copy
@@ -74,7 +74,7 @@ def proof_of_work(last_proof, blockchain):
     while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
         incrementer += 1
         # Check if any node found the solution every 60 seconds
-        if int((time.time()-start_time) % 60) == 0:
+        if int((time.time() - start_time) % 60) == 0:
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
             if new_blockchain:
@@ -108,7 +108,8 @@ def mine(a, blockchain, node_pending_transactions):
             # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
             # First we load all pending transactions sent to the node server
-            NODE_PENDING_TRANSACTIONS = requests.get(url = MINER_NODE_URL + '/txion', params = {'update':MINER_ADDRESS}).content
+            NODE_PENDING_TRANSACTIONS = requests.get(url=MINER_NODE_URL + '/txion',
+                                                     params={'update': MINER_ADDRESS}).content
             NODE_PENDING_TRANSACTIONS = json.loads(NODE_PENDING_TRANSACTIONS)
             # Then we add the mining reward
             NODE_PENDING_TRANSACTIONS.append({
@@ -130,20 +131,21 @@ def mine(a, blockchain, node_pending_transactions):
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
             print(json.dumps({
-              "index": new_block_index,
-              "timestamp": str(new_block_timestamp),
-              "data": new_block_data,
-              "hash": last_block_hash
+                "index": new_block_index,
+                "timestamp": str(new_block_timestamp),
+                "data": new_block_data,
+                "hash": last_block_hash
             }) + "\n")
             a.send(BLOCKCHAIN)
-            requests.get(url = MINER_NODE_URL + '/blocks', params = {'update':MINER_ADDRESS})
+            requests.get(url=MINER_NODE_URL + '/blocks', params={'update': MINER_ADDRESS})
+
 
 def find_new_chains():
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
         # Get their chains using a GET request
-        block = requests.get(url = node_url + "/blocks").content
+        block = requests.get(url=node_url + "/blocks").content
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
         # Verify other node block is correct
@@ -222,6 +224,15 @@ def transaction():
             print("TO: {0}".format(new_txion['to']))
             print("AMOUNT: {0}\n".format(new_txion['amount']))
             # Then we let the client know it worked out
+            # my code-----------------------------------------------------------
+            f = open("transactions_share.txt", "w")
+            # f = open(r"C:\transactions_share.txt", "w")
+            print("New transaction", file=f)
+            print("FROM: {0}".format(new_txion['from']), file=f)
+            print("TO: {0}".format(new_txion['to']), file=f)
+            print("AMOUNT: {0}\n".format(new_txion['amount']), file=f)
+            f.close()
+            # my code------------------------------------------------------------
             return "Transaction submission successful\n"
         else:
             return "Transaction submission failed. Wrong signature\n"
