@@ -22,9 +22,16 @@ import requests
 import time
 import base64
 import ecdsa
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import os.path
+from datetime import datetime
 
 
-# my code first enhancement-------------------------------------------------------------------------------------------------------------
+# my code-------------------------------------------------------------------------------------------------------------
 def acc_check():
     login_check = input("Do you have an account?(y/n): ")
     if login_check.lower() == 'y':
@@ -94,7 +101,7 @@ def login():
             end()
 
 
-# my code first enhancement-------------------------------------------------------------------------------------------------------------
+# my code-------------------------------------------------------------------------------------------------------------
 def wallet():
     response = None
     while response not in ["1", "2", "3", "4", "5"]:
@@ -155,9 +162,90 @@ def send_transaction(addr_from, private_key, addr_to, amount):
 
         res = requests.post(url, json=payload, headers=headers)
         print(res.text)
+        # my program -------------------------------------------------------------
+        with sqlite3.connect("translog.db") as db2:
+            cursor2 = db2.cursor()
+            # create table
+            cursor2.execute('''
+                CREATE TABLE IF NOT EXISTS transactions(
+                private_k VARCHAR(250) NOT NUll,
+                sender_k VARCHAR(250) NOT NULL,
+                receiver_k VARCHAR(250) NOT NULL,
+                c_amount INTEGER NOT NULL,
+                dNt TEXT NOT NULL);
+                ''')
+            # insert values to table from user input
+
+            pri_key = private_key
+            pub_key = addr_from
+            r_pub_k = addr_to
+            c_amount = amount
+            dt_for = datetime.now().strftime("%B %d, %Y %I:%M%p")
+            cursor2.execute(""" 
+                INSERT INTO transactions(private_k, sender_k, receiver_k, c_amount, dNt)
+                VALUES (?,?,?,?,?)   
+                """, (pri_key, pub_key, r_pub_k, c_amount, dt_for))
+            db2.commit()
+            # print("Data entered successfully")
+
+        # my code -------------------------------------------------------------
+        # my code----------------------------------------------------------------
+        share_m = input("Do you want to share this transfer details with email?\n(y/n): ")
+        if share_m.lower() == 'y':
+            share_with_m()
+        elif share_m.lower() == 'n':
+            wallet()
+        else:
+            print("Invalid input")
+            print("Auto cancelled")
+            wallet()
+        # my code---------------------------------------------------------------
+
     else:
         print("Wrong address or key length! Verify and try again.")
 
+
+# my code------------------------------------------------------------
+def share_with_m():
+    r_mail = input("Enter the receiver mail address: ")
+    email = 'simplecoinproject@gmail.com'  # Your email
+    password = '123Abc321!'  # Your email account password
+    send_to_email = r_mail  # Who you are sending the message to
+    subject = 'SimpleCoin Transaction Alert'  # The subject line
+    message = ''  # The message in the email
+    file_location = r'C:\Users\hp\Downloads\SimpleCoin-master\SimpleCoin-master\simpleCoin\transactions_share.txt'
+    # file_location = r'C:\Users\hp\Downloads\SimpleCoin-master enhanced (KND)\SimpleCoin-master\simpleCoin\transactions_share.txt'
+
+    with open(file_location) as f:
+        message = f.read()
+
+    msg = MIMEMultipart()
+    msg['From'] = email
+    msg['To'] = send_to_email
+    msg['Subject'] = subject
+
+    # Attach the message to the MIMEMultipart object
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Setup the attachment
+    filename = os.path.basename(file_location)
+    attachment = open(file_location, "rb")
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(email, password)
+    text = msg.as_string()  # You now need to convert the MIMEMultipart object to a string to send
+    server.sendmail(email, send_to_email, text)
+    server.quit()
+    print("Sent Successfully!!!!")
+    wallet()
+
+
+# my code------------------------------------------------------------
 
 def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
