@@ -129,8 +129,8 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
-    # elif response == "4":
-    # trans_improved()
+    elif response == "4":
+        trans_improved()
     elif response == "5":
         end()
     else:  # Will always occur when response == 3.
@@ -199,7 +199,7 @@ def send_transaction(addr_from, private_key, addr_to, amount):
             print("Invalid input")
             print("Auto cancelled")
             wallet()
-        # my code---------------------------------------------------------------
+        # my code----------------------------------------------------------------
 
     else:
         print("Wrong address or key length! Verify and try again.")
@@ -214,7 +214,7 @@ def share_with_m():
     subject = 'SimpleCoin Transaction Alert'  # The subject line
     message = ''  # The message in the email
     file_location = r'C:\Users\hp\Downloads\SimpleCoin-master\SimpleCoin-master\simpleCoin\transactions_share.txt'
-    # file_location = r'C:\Users\hp\Downloads\SimpleCoin-master enhanced (KND)\SimpleCoin-master\simpleCoin\transactions_share.txt'
+    #file_location = r'C:\Users\hp\Downloads\SimpleCoin-master enhanced (KND)\SimpleCoin-master\simpleCoin\transactions_share.txt'
 
     with open(file_location) as f:
         message = f.read()
@@ -245,6 +245,32 @@ def share_with_m():
     wallet()
 
 
+# my code------------------------------------------------------------
+def trans_improved():
+    pri_k = input("Enter your private key: ")
+    with sqlite3.connect("translog.db") as db2:
+        cursor2 = db2.cursor()
+
+    cursor2.execute("SELECT * FROM transactions WHERE private_k = '%s'" % pri_k)
+    data1 = cursor2.fetchall()
+    if len(data1) == 0:
+        print("DATA IS NOT FOUND")
+    else:
+        for row in data1:
+            # pri_key = row[0]
+            pub_key = row[1]
+            r_pub_k = row[2]
+            c_amount = row[3]
+            dt_for = row[4]
+            # print(pri_key)
+            print('')
+            print("Date and Time: ", dt_for)
+            print("From:", pub_key)
+            print("To:", r_pub_k)
+            print("Amount: ", c_amount)
+            print('')
+            print('-----------------------------------------------------------------')
+    wallet()
 # my code------------------------------------------------------------
 
 def check_transactions():
