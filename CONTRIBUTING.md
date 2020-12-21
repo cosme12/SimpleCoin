@@ -17,4 +17,4 @@ We use GitHub issues to track public bugs. Please ensure your description is cle
 
 The idea of this project is to build a **really simple** blockchain system, so make sure all your code is easy to read (avoid too much code in 1 line) and don't introduce complex updates if they are not critical. In other words, keep it simple.
 
-Thanks for helping and don't be scared to contribute.
+Thank you for helping, and don't be afraid to contribute.
