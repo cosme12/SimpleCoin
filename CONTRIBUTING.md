@@ -7,7 +7,7 @@ We actively welcome your pull requests.
 
 1. Fork the repo and create your branch from `master` or the current branch version. 
 2. If you've added code make sure to test it (no problem if it doesn't work at first commit though).
-3. Keep pull request small and aimed to fix one simple problem. Make many pull requests if problems are different.
+3. Keep pull requests small and aim to solve a simple problem. Make many pull requests if problems are different.
 4. If you think your pull request is big, you can always start a new issue to discuss it together.
 
 ## Issues  
@@ -17,4 +17,4 @@ We use GitHub issues to track public bugs. Please ensure your description is cle
 
 The idea of this project is to build a **really simple** blockchain system, so make sure all your code is easy to read (avoid too much code in 1 line) and don't introduce complex updates if they are not critical. In other words, keep it simple.
 
-Thanks for helping and don't be scared to contribute.
+Thank you for helping, and don't be afraid to contribute.
