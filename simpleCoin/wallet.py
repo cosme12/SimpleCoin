@@ -22,15 +22,17 @@ import requests
 import time
 import base64
 import ecdsa
-
+import pickle
+from ast import literal_eval
 
 def wallet():
     response = None
-    while response not in ["1", "2", "3"]:
+    while response not in ["1", "2", "3","4"]:
         response = input("""What do you want to do?
         1. Generate new wallet
         2. Send coins to another wallet
-        3. Check transactions\n""")
+        3. Check transactions
+        4. Update old wallet\n""")
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -38,8 +40,11 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
 =========================================\n""")
         generate_ECDSA_keys()
     elif response == "2":
-        addr_from = input("From: introduce your wallet address (public key)\n")
-        private_key = input("Introduce your private key\n")
+        filename = input("Please enter your wallet name \n") + ".simpleWallet"
+        with open(filename, 'rb') as f:
+             keys = pickle.load(f)
+        private_key = keys[0]
+        addr_from = keys[1]
         addr_to = input("To: introduce destination wallet address\n")
         amount = input("Amount: number stating how much do you want to send\n")
         print("=========================================\n\n")
@@ -48,9 +53,15 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
-    else:  # Will always occur when response == 3.
+    elif response == "3":  # Will always occur when response == 3.
         check_transactions()
-
+    elif response == "4":
+        old_public = input("Please enter your old public Key :\n")
+        old_secret = input("Please enter your old secret key :\n")
+        filename = input("Enter the name of your new wallet: ") + ".simpleWallet"
+        keys = [old_secret,old_public]
+        with open(filename, 'wb') as f:
+            pickle.dump(keys, f)
 
 def send_transaction(addr_from, private_key, addr_to, amount):
     """Sends your transaction to different nodes. Once any of the nodes manage
@@ -85,8 +96,51 @@ def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
     wallets balance. If the blockchain is to long, it may take some time to load.
     """
+    filename = input("Please enter your wallet name \n") + ".simpleWallet"
+    with open(filename, 'rb') as f:
+         keys = pickle.load(f)
+    private_key = keys[0]
+    addr = keys[1]
+    print("Your address : \n")
+    print(addr)
     res = requests.get('http://localhost:5000/blocks')
-    print(res.text)
+    chain = res.json()
+    balance = {
+        "network":0
+    }
+    del chain[0]
+    for block in chain:
+        data = block.get("data")
+        data = literal_eval(data)
+        transactions = data.get("transactions")
+        transaction = (transactions[0])
+        tx = transaction.get("from")
+        rx = transaction.get("to")
+        amount = transaction.get("amount")
+        if rx == addr:
+            print("+" + amount)
+            print(tx)
+        if tx == addr:
+            print("-" + amount)
+            print(rx)
+
+        if rx==addr or tx==addr:
+            if tx in balance:
+                balance[tx] = balance[tx]-int(amount)
+            else:
+                balance[tx] = 0-amount
+            if rx in balance:
+                balance[rx] = balance[rx]+int(amount)
+            else:
+                balance[rx] = amount
+    for adress in balance:
+            print("Your Balance")
+            if addr in balance:
+                print(balance[addr])
+            else:
+                print(0)
+            print("\n")
+
 
 
 def generate_ECDSA_keys():
@@ -104,9 +158,10 @@ def generate_ECDSA_keys():
     #we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
 
-    filename = input("Write the name of your new address: ") + ".txt"
-    with open(filename, "w") as f:
-        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
+    filename = input("Enter the name of your wallet: ") + ".simpleWallet"
+    keys = [private_key,public_key]
+    with open(filename, 'wb') as f:
+        pickle.dump(keys, f)
     print("Your new address and private key are now in the file {0}".format(filename))
 
 def sign_ECDSA_msg(private_key):
