@@ -260,9 +260,10 @@ def welcome_msg():
 if __name__ == '__main__':
     welcome_msg()
     # Start mining
-    a, b = Pipe()
-    p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
-    p1.start()
+    pipe_output, pipe_input = Pipe()
+    miner_process = Process(target=mine, args=(pipe_output, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
+    miner_process.start()
+
     # Start server to receive transactions
-    p2 = Process(target=node.run(), args=b)
-    p2.start()
+    transactions_process = Process(target=node.run(), args=pipe_input)
+    transactions_process.start()
