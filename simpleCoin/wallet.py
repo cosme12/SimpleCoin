@@ -22,7 +22,7 @@ import requests
 import time
 import base64
 import ecdsa
-
+from os import system
 
 def wallet():
     response = None
@@ -85,6 +85,7 @@ def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
     wallets balance. If the blockchain is to long, it may take some time to load.
     """
+    system("python ./miner.py")
     res = requests.get('http://localhost:5000/blocks')
     print(res.text)
 
