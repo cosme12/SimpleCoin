@@ -6,10 +6,21 @@ import base64
 from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
+import logging
 
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
 node = Flask(__name__)
+
+# logging
+log = logging.getLogger('miner')
+
+fh = logging.FileHandler('miner_log.txt')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '', '%')
+fh.setFormatter(formatter)
+log.addHandler(fh)
+
+log.setLevel(logging.DEBUG)
 
 
 class Block:
@@ -41,6 +52,7 @@ class Block:
         """Creates the unique hash for the block. It uses sha256."""
         sha = hashlib.sha256()
         sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
+        log.info('sha256 hash block created')
         return sha.hexdigest()
 
 
@@ -48,6 +60,7 @@ def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
     block has no previous, so it must be created manually (with index zero
      and arbitrary previous hash)"""
+    log.info('genesis block created')
     return Block(0, time.time(), {
         "proof-of-work": 9,
         "transactions": None},
@@ -78,9 +91,11 @@ def proof_of_work(last_proof, blockchain):
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
             if new_blockchain:
+                logging.info('Another node got proof, new blockchain')
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
+    log.info('found proof of work: %d', incrementer)
     return incrementer, blockchain
 
 
@@ -101,6 +116,7 @@ def mine(a, blockchain, node_pending_transactions):
         # If we didn't guess the proof, start mining again
         if not proof[0]:
             # Update blockchain and save it to file
+            logging.info('No proof found, continue mining')
             BLOCKCHAIN = proof[1]
             a.send(BLOCKCHAIN)
             continue
@@ -127,6 +143,9 @@ def mine(a, blockchain, node_pending_transactions):
             NODE_PENDING_TRANSACTIONS = []
             # Now create the new block
             mined_block = Block(new_block_index, new_block_timestamp, new_block_data, last_block_hash)
+            log.info('New block created:\n\tINDEX: %d\n\tDATA: %s\n\tHASH: %s',
+                    new_block_index, new_block_data, last_block_hash
+                    )
             BLOCKCHAIN.append(mined_block)
             # Let the client know this node mined a block
             print(json.dumps({
@@ -169,6 +188,7 @@ def consensus(blockchain):
         return False
     else:
         # Give up searching proof, update chain and start over again
+        log.info('Updating chain, restarting process')
         BLOCKCHAIN = longest_chain
         return BLOCKCHAIN
 
@@ -200,6 +220,7 @@ def get_blocks():
 
     # Send our chain to whomever requested it
     chain_to_send = json.dumps(chain_to_send_json)
+    log.info('Sending chain to requester')
     return chain_to_send
 
 
@@ -222,14 +243,19 @@ def transaction():
             print("TO: {0}".format(new_txion['to']))
             print("AMOUNT: {0}\n".format(new_txion['amount']))
             # Then we let the client know it worked out
+            log.info('Successful transaction\n\tFROM: %s\n\tTO: %s\n\tAMOUNT: %d',
+                    new_txion['from'], new_txion['to'], new_txion['amount']
+                    )
             return "Transaction submission successful\n"
         else:
+            log.info('Transation failed due to invalid signature.')
             return "Transaction submission failed. Wrong signature\n"
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS)
         # Empty transaction list
         NODE_PENDING_TRANSACTIONS[:] = []
+        log.info('Sending pending transactions to the mining process')
         return pending
 
 
@@ -243,8 +269,10 @@ def validate_signature(public_key, signature, message):
     vk = ecdsa.VerifyingKey.from_string(bytes.fromhex(public_key), curve=ecdsa.SECP256k1)
     # Try changing into an if/else statement as except is too broad.
     try:
+        log.info('Validating signature')
         return vk.verify(signature, message.encode())
     except:
+        log.info('Invalid signature')
         return False
 
 
@@ -260,9 +288,11 @@ def welcome_msg():
 if __name__ == '__main__':
     welcome_msg()
     # Start mining
+    log.info('Starting mining')
     a, b = Pipe()
     p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
     p1.start()
     # Start server to receive transactions
+    log.info('Starting server')
     p2 = Process(target=node.run(), args=b)
     p2.start()
