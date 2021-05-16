@@ -134,7 +134,7 @@ def mine(a, blockchain, node_pending_transactions):
               "timestamp": str(new_block_timestamp),
               "data": new_block_data,
               "hash": last_block_hash
-            }) + "\n")
+            }, sort_keys=True) + "\n")
             a.send(BLOCKCHAIN)
             requests.get(url = MINER_NODE_URL + '/blocks', params = {'update':MINER_ADDRESS})
 
@@ -199,7 +199,7 @@ def get_blocks():
         chain_to_send_json.append(block)
 
     # Send our chain to whomever requested it
-    chain_to_send = json.dumps(chain_to_send_json)
+    chain_to_send = json.dumps(chain_to_send_json, sort_keys=True)
     return chain_to_send
 
 
@@ -227,7 +227,7 @@ def transaction():
             return "Transaction submission failed. Wrong signature\n"
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
-        pending = json.dumps(NODE_PENDING_TRANSACTIONS)
+        pending = json.dumps(NODE_PENDING_TRANSACTIONS, sort_keys=True)
         # Empty transaction list
         NODE_PENDING_TRANSACTIONS[:] = []
         return pending
