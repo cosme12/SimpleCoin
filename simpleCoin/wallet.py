@@ -26,11 +26,12 @@ import ecdsa
 
 def wallet():
     response = None
-    while response not in ["1", "2", "3"]:
+    while response not in ["1", "2", "3","4"]:
         response = input("""What do you want to do?
         1. Generate new wallet
         2. Send coins to another wallet
-        3. Check transactions\n""")
+        3. Check transactions
+        4. Quit\n""")
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -48,8 +49,10 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
-    else:  # Will always occur when response == 3.
+    elif response == "3":  # Will always occur when response == 3.
         check_transactions()
+    else:
+        quit()
 
 
 def send_transaction(addr_from, private_key, addr_to, amount):
@@ -88,6 +91,7 @@ def check_transactions():
     res = requests.get('http://localhost:5000/blocks')
     print(res.text)
 
+    
 
 def generate_ECDSA_keys():
     """This function takes care of creating your private and public (your address) keys.
