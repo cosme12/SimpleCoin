@@ -42,7 +42,7 @@ This file is probably the most important. Running it will create a node (like a 
 
 1. The first process takes care of mining, updating new blockchains and finding the proof of work.
 
-2. The second process runs the flask server where peer nodes and users can connect to ask for the entire blockchain or sumbmit new transactions.
+2. The second process runs the flask server where peer nodes and users can connect to ask for the entire blockchain or submit new transactions.
 
 > Parallel processes don't run in python IDLE, so make sure you are running it from the console.
 
