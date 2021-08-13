@@ -18,10 +18,12 @@ transaction with same timestamp was added, they should remove it from the
 node_pending_transactions list to avoid it get processed more than 1 time.
 """
 
+import os, os.path
 import requests
 import time
 import base64
 import ecdsa
+
 
 
 def wallet():
@@ -112,10 +114,43 @@ def generate_ECDSA_keys():
     public_key = base64.b64encode(bytes.fromhex(public_key))
 
     filename = input("Write the name of your new address: ") + ".txt"
-    with open(filename, "w") as f:
-        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
-    print("Your new address and private key are now in the file {0}".format(filename))
+    filename_already_exists = False  # flag to check if the filename is taken or not
 
+    # check whether a wallet with same name already exists
+    while (filename_already_exists == False):
+        skip = False  # To skip remaining lines of while loop and go to the first line of while loop
+        #print(([name for name in os.listdir('.') if os.path.isfile(name)]))
+        #print(os.listdir('.'))
+        files = os.listdir('.')
+        for name in files:
+            if name == filename: 
+                # filename already exists
+                print("A wallet with this name already exists!")
+                print("Do you want to overwrite?(y/n)")
+                user_response = input()
+                if user_response.lower() == "y":
+                    filename_already_exists = True  # change the flag to exit the loop
+                    with open(filename, "w") as f:
+                        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
+                    print("Your new address and private key are now in the file {0}".format(filename))
+                else:
+                    # enter a new file name
+                    filename = input("Write the name of your new address: ") + ".txt"
+                    skip = True
+                    break
+            
+
+        if skip == True:
+            continue
+
+        # if wallet filename is new, checked the whole directory for the same filename
+        if  filename_already_exists == False:
+            filename_already_exists = True  # change the flag to exit the loop
+            with open(filename, "w") as f:
+                f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
+            print("Your new address and private key are now in the file {0}".format(filename))    
+
+ 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
     private_key: must be hex
