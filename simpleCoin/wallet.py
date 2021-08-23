@@ -45,7 +45,7 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         amount = input("Amount: number stating how much do you want to send\n")
         print("=========================================\n\n")
         print("Is everything correct?\n")
-        print("From: {0}\nPrivate Key: {1}\nTo: {2}\nAmount: {3}\n".format(addr_from, private_key, addr_to, amount))
+        print(F"From: {addr_from}\nPrivate Key: {private_key}\nTo: {addr_to}\nAmount: {amount}\n")
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
@@ -113,8 +113,8 @@ def generate_ECDSA_keys():
 
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
-        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
-    print("Your new address and private key are now in the file {0}".format(filename))
+        f.write(F"Private key: {private_key}\nWallet address / Public key: {public_key.decode()}")
+    print(F"Your new address and private key are now in the file {filename}")
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
