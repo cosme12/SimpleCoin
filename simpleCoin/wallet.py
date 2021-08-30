@@ -22,6 +22,7 @@ import requests
 import time
 import base64
 import ecdsa
+import json
 
 
 def wallet():
@@ -92,11 +93,11 @@ def check_transactions():
     """
     try:
         res = requests.get('http://localhost:5000/blocks')
-        print(res.text)
+        print(json.dumps(res.json(),indent=2))
     except requests.ConnectionError:
         print('Connection error. Make sure that you have run miner.py in another terminal.')
 
-    
+
 
 def generate_ECDSA_keys():
     """This function takes care of creating your private and public (your address) keys.
