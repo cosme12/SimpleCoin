@@ -114,7 +114,7 @@ def check_wallet(wallet_address):
 
         transactions_history = []
 
-        for block in blocks: # transactions
+        for block in blocks: # transactions.
             inblock_transactions = ast.literal_eval(block['data'])['transactions']
 
             for trx in inblock_transactions:
