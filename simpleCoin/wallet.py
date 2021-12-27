@@ -22,7 +22,7 @@ import requests
 import time
 import base64
 import ecdsa
-
+import ast
 
 def wallet():
     response = None
@@ -31,7 +31,8 @@ def wallet():
         1. Generate new wallet
         2. Send coins to another wallet
         3. Check transactions
-        4. Quit\n""")
+        4. Wallet information
+        5. Quit\n""")
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -53,6 +54,9 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
             return wallet()  # return to menu
     elif response == "3":  # Will always occur when response == 3.
         check_transactions()
+    elif response == "4":
+        wallet_address = input("Wallet: introduce your wallet address (public key)\n")
+        check_wallet(wallet_address)
     else:
         quit()
 
@@ -96,7 +100,51 @@ def check_transactions():
     except requests.ConnectionError:
         print('Connection error. Make sure that you have run miner.py in another terminal.')
 
-    
+def check_wallet(wallet_address):
+    """"Retrieve your wallet information , like transaction history or amount of coins"""
+    try:
+        res = requests.get('http://localhost:5000/blocks')
+        blocks = res.json()[1:]  # except first block
+
+        withdraw_history = []
+        withdraw_amount = 0
+
+        deposit_history = []
+        deposit_amount = 0
+
+        transactions_history = []
+
+        for block in blocks: # transactions
+            inblock_transactions = ast.literal_eval(block['data'])['transactions']
+
+            for trx in inblock_transactions:
+                if trx['from'] == wallet_address : # if you spend coin
+                    withdraw_history.append(trx)
+                    withdraw_amount +=  trx['amount']
+                    transactions_history.append(trx)
+
+                if trx['to'] == wallet_address : # if you earn coin
+                    deposit_history.append(trx)
+                    deposit_amount +=  trx['amount']
+                    transactions_history.append(trx)
+
+        print("=-=-=- Wallet Information =-=-=-")
+        print('Withdraw amount :', withdraw_amount)
+        print('Deposit amount :', deposit_amount)
+        print('Available :' , deposit_amount - withdraw_amount)
+        print('--------------------------------')
+        response = input("""
+        1) Transactions history
+        2) Back to main menu
+        """)
+        if response == 1:
+            print(transactions_history)
+            # in the future we will add "+" sign for received transactions and "-" sign for sent transactions
+        else : wallet()
+
+
+    except requests.ConnectionError:
+        print('Connection error. Make sure that you have run miner.py in another terminal.')
 
 def generate_ECDSA_keys():
     """This function takes care of creating your private and public (your address) keys.
