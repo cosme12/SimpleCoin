@@ -174,9 +174,14 @@ def consensus(blockchain):
 
 
 def validate_blockchain(block):
-    """Validate the submitted chain. If hashes are not correct, return false
+    """Validate the submitted chain. If hashes are not correct, return False
     block(str): json
     """
+
+    for i in range(len(block)-1):
+        if not block[i].hash_block() == block[i+1].previous_hash:
+            return False
+
     return True
 
 
