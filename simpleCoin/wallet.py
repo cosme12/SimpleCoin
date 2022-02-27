@@ -22,6 +22,8 @@ import requests
 import time
 import base64
 import ecdsa
+import json
+import miner_config
 
 
 def wallet():
@@ -31,7 +33,8 @@ def wallet():
         1. Generate new wallet
         2. Send coins to another wallet
         3. Check transactions
-        4. Quit\n""")
+        4. View wallet balance
+        5. Quit\n""")
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -52,7 +55,9 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         elif response.lower() == "n":
             return wallet()  # return to menu
     elif response == "3":  # Will always occur when response == 3.
-        check_transactions()
+        print(check_transactions())
+    elif response == "4":
+        print(get_wallet_balance())
     else:
         quit()
 
@@ -88,15 +93,33 @@ def send_transaction(addr_from, private_key, addr_to, amount):
 
 def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
-    wallets balance. If the blockchain is to long, it may take some time to load.
+    wallets balance. If the blockchain is too long, it may take some time to load.
     """
     try:
         res = requests.get('http://localhost:5000/blocks')
-        print(res.text)
+        return json.loads(requests.get('http://localhost:5000/blocks').text)
     except requests.ConnectionError:
         print('Connection error. Make sure that you have run miner.py in another terminal.')
 
-    
+def get_wallet_balance():
+    blockchain = json.loads(requests.get('http://localhost:5000/blocks').text)
+    #print(blockchain)
+
+    balance = 0
+
+    for block in blockchain:
+        data = block['data']
+        transactions = data['transactions']
+        if transactions == None:
+            pass
+        else:
+            for transaction in transactions:
+                if transaction['from'] == miner_config.MINER_ADDRESS:
+                    balance -= transaction['amount']
+                if transaction['to'] == miner_config.MINER_ADDRESS:
+                    balance += transaction['amount']
+
+    return balance
 
 def generate_ECDSA_keys():
     """This function takes care of creating your private and public (your address) keys.
