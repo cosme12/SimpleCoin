@@ -1,1 +1,4 @@
 *.pyc
+.venv
+.vscode
+.python-version

@@ -131,7 +131,7 @@ def mine(a, blockchain, node_pending_transactions):
             # Let the client know this node mined a block
             print(json.dumps({
               "index": new_block_index,
-              "timestamp": str(new_block_timestamp),
+              "timestamp": new_block_timestamp,
               "data": new_block_data,
               "hash": last_block_hash
             }, sort_keys=True) + "\n")
@@ -191,9 +191,9 @@ def get_blocks():
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
-            "index": str(block.index),
-            "timestamp": str(block.timestamp),
-            "data": str(block.data),
+            "index": block.index,
+            "timestamp": block.timestamp,
+            "data": block.data,
             "hash": block.hash
         }
         chain_to_send_json.append(block)
@@ -258,11 +258,14 @@ def welcome_msg():
 
 
 if __name__ == '__main__':
-    welcome_msg()
-    # Start mining
-    a, b = Pipe()
-    p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
-    p1.start()
-    # Start server to receive transactions
-    p2 = Process(target=node.run(), args=b)
-    p2.start()
+    if MINER_ADDRESS == "":
+        print('You need to configure your miner_config.py file with your wallet address. You can generate a wallet address using the wallet.py file.')
+    else:
+        welcome_msg()
+        # Start mining
+        a, b = Pipe()
+        p1 = Process(target=mine, args=(a, BLOCKCHAIN, NODE_PENDING_TRANSACTIONS))
+        p1.start()
+        # Start server to receive transactions
+        p2 = Process(target=node.run(), args=b)
+        p2.start()
