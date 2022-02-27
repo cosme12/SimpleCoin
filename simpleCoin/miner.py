@@ -191,9 +191,9 @@ def get_blocks():
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
-            "index": str(block.index),
-            "timestamp": str(block.timestamp),
-            "data": str(block.data),
+            "index": block.index,
+            "timestamp": block.timestamp,
+            "data": block.data,
             "hash": block.hash
         }
         chain_to_send_json.append(block)
