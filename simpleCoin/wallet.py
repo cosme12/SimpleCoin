@@ -140,6 +140,10 @@ def generate_ECDSA_keys():
     with open(filename, "w") as f:
         f.write(F"Private key: {private_key}\nWallet address / Public key: {public_key.decode()}")
     print(F"Your new address and private key are now in the file {filename}")
+    print("Pro tip: save your 'Wallet address/ Public key' as your 'MINER_ADDRESS' in your miner_config.py file")
+
+    with open('../.gitignore', 'a') as gitignore:
+        gitignore.write(f"\nsimpleCoin/{filename}")
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
