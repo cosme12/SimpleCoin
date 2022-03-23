@@ -185,7 +185,7 @@ def get_blocks():
     # Load current blockchain. Only you should update your blockchain
     if request.args.get("update") == MINER_ADDRESS:
         global BLOCKCHAIN
-        BLOCKCHAIN = b.recv()
+        BLOCKCHAIN = pipe_input.recv()
     chain_to_send = BLOCKCHAIN
     # Converts our blocks into dictionaries so we can send them as json objects later
     chain_to_send_json = []
