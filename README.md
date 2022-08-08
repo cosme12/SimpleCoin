@@ -54,6 +54,9 @@ This file is probably the most important. Running it will create a node (like a 
 
 ![miner](https://k60.kn3.net/3/B/3/F/E/C/013.png)
 
+The following flowchart provides a simple , high-level understanding of what the miner does
+![MinerFlowchart](images/flowchart.png)
+
 ### Wallet.py
 
 This file is for those who don't want to be nodes but simple users. Running this file allows you to generate a new address, send coins and check your transaction history (keep in mind that if you are running this in a local server, you will need a "miner" to process your transaction).
