@@ -3,6 +3,7 @@ import hashlib
 import json
 import requests
 import base64
+
 from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
@@ -23,7 +24,7 @@ class Block:
             data (str): Data to be sent.
             previous_hash(str): String representing previous block unique hash.
 
-        Attrib:
+        Attributes:
             index (int): Block number.
             timestamp (int): Block creation timestamp.
             data (str): Data to be sent.
@@ -35,14 +36,12 @@ class Block:
         self.timestamp = timestamp
         self.data = data
         self.previous_hash = previous_hash
-        self.hash = self.hash_block()
+        self.hash = self.__hash__()
 
-    def hash_block(self):
+    def __hash__(self):
         """Creates the unique hash for the block. It uses sha256."""
-        sha = hashlib.sha256()
-        sha.update((str(self.index) + str(self.timestamp) + str(self.data) + str(self.previous_hash)).encode('utf-8'))
-        return sha.hexdigest()
 
+        return hashlib.sha256(json.dumps(self.__dict__, sort_keys=True, indent=4).encode('utf-8')).hexdigest()
 
 def create_genesis_block():
     """To create each block, it needs the hash of the previous one. First
