@@ -1,3 +1,4 @@
+from os import system
 import time
 import hashlib
 import json
@@ -249,6 +250,8 @@ def validate_signature(public_key, signature, message):
 
 
 def welcome_msg():
+    # Clear the screen before welcome message
+    _ = system('clear')
     print("""       =========================================\n
         SIMPLE COIN v1.0.0 - BLOCKCHAIN SYSTEM\n
        =========================================\n\n

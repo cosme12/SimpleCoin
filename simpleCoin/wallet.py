@@ -17,7 +17,7 @@ blockchain but other nodes still will have it pending. If any node see that your
 transaction with same timestamp was added, they should remove it from the
 node_pending_transactions list to avoid it get processed more than 1 time.
 """
-
+from os import system
 import requests
 import time
 import base64
@@ -138,6 +138,8 @@ def sign_ECDSA_msg(private_key):
 
 
 if __name__ == '__main__':
+    # Clear the screen before welcome message
+    _ = system('clear')
     print("""       =========================================\n
         SIMPLE COIN v1.0.0 - BLOCKCHAIN SYSTEM\n
        =========================================\n\n
