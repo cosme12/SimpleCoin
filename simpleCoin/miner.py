@@ -66,13 +66,24 @@ NODE_PENDING_TRANSACTIONS = []
 
 
 def proof_of_work(last_proof, blockchain):
+    new_proof = 1
+    check_proof = False
+    counter = 0
     # Creates a variable that we will use to find our next proof of work
     incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 7919
     # and the proof of work of the previous block in the chain
     start_time = time.time()
-    while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
-        incrementer += 1
+    while check_proof is False:
+        hash_operation = hashlib.sha256(
+            str(new_proof ** 6 - last_proof ** 6).encode()).hexdigest()
+        #print(hash_operation)
+        if hash_operation[:6] == '000000':
+            check_proof = True
+            print('total hashes: ' + str(counter))
+        else:
+            new_proof += 1
+            counter += 1
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
@@ -81,7 +92,7 @@ def proof_of_work(last_proof, blockchain):
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
-    return incrementer, blockchain
+    return new_proof, blockchain
 
 
 def mine(a, blockchain, node_pending_transactions):
