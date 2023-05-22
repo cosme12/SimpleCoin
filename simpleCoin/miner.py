@@ -78,7 +78,7 @@ def proof_of_work(last_proof, blockchain):
         hash_operation = hashlib.sha256(
             str(new_proof ** 6 - last_proof ** 6).encode()).hexdigest()
         #print(hash_operation)
-        if hash_operation[:6] == '000000':
+        if hash_operation[:5] == '00000':
             check_proof = True
             print('total hashes: ' + str(counter))
         else:
@@ -214,6 +214,30 @@ def get_blocks():
     return chain_to_send
 
 
+@node.route('/balance', methods=['GET'])
+def get_balance():
+    address = request.args.get("address")
+    global BLOCKCHAIN
+    chain_to_send = BLOCKCHAIN
+    transaction_history = []
+    c_counter = 0
+    d_counter = 0
+    for block in chain_to_send:
+        y = block.data
+        transaction_history.append(y["transactions"])
+    for x in transaction_history:
+        if x is not None:
+            for y in x:
+                # print(y['to'])
+                if y['to'] == address:
+                    c_counter = c_counter + y['amount']
+                if y['from'] == address:
+                    d_counter = d_counter + int(y['amount'])
+
+    balance = c_counter - d_counter
+    return str(balance)
+
+
 @node.route('/txion', methods=['GET', 'POST'])
 def transaction():
     """Each transaction sent to this node gets validated and submitted.
@@ -223,19 +247,25 @@ def transaction():
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
+        balance = requests.get(url=MINER_NODE_URL + '/balance', params={'address': new_txion['from']})
+        parsed = json.loads(balance.text)
+        int_balance = int(json.dumps(parsed))
         # Then we add the transaction to our list
-        if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
-            NODE_PENDING_TRANSACTIONS.append(new_txion)
-            # Because the transaction was successfully
-            # submitted, we log it to our console
-            print("New transaction")
-            print("FROM: {0}".format(new_txion['from']))
-            print("TO: {0}".format(new_txion['to']))
-            print("AMOUNT: {0}\n".format(new_txion['amount']))
-            # Then we let the client know it worked out
-            return "Transaction submission successful\n"
+        if int_balance >= int(new_txion['amount']):
+            if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
+                NODE_PENDING_TRANSACTIONS.append(new_txion)
+                # Because the transaction was successfully
+                # submitted, we log it to our console
+                print("New transaction")
+                print("FROM: {0}".format(new_txion['from']))
+                print("TO: {0}".format(new_txion['to']))
+                print("AMOUNT: {0}\n".format(new_txion['amount']))
+                # Then we let the client know it worked out
+                return "Transaction submission successful\n"
+            else:
+                return "Transaction submission failed. Wrong signature\n"
         else:
-            return "Transaction submission failed. Wrong signature\n"
+            return "Transaction submission failed. Insufficient Funds.\n"
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS, sort_keys=True)

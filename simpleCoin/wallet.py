@@ -27,12 +27,13 @@ import json
 
 def wallet():
     response = None
-    while response not in ["1", "2", "3", "4"]:
+    while response not in ["1", "2", "3", "4", "5"]:
         response = input("""What do you want to do?
         1. Generate new wallet
         2. Send coins to another wallet
         3. Check transactions
-        4. Quit\n""")
+        4. Check Balance
+        5. Quit\n""")
     if response == "1":
         # Generate new wallet
         print("""=========================================\n
@@ -54,6 +55,9 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
             return wallet()  # return to main menu
     elif response == "3":  # Will always occur when response == 3.
         check_transactions()
+        return wallet()  # return to main menu
+    elif response == "4":  # Will always occur when response == 4.
+        check_balance()
         return wallet()  # return to main menu
     else:
         quit()
@@ -96,6 +100,20 @@ def check_transactions():
         res = requests.get('http://localhost:5000/blocks')
         parsed = json.loads(res.text)
         print(json.dumps(parsed, indent=4, sort_keys=True))
+    except requests.ConnectionError:
+        print('Connection error. Make sure that you have run miner.py in another terminal.')
+
+
+def check_balance():
+    """Retrieve the entire blockchain. With this you can check your
+    wallets balance. If the blockchain is to long, it may take some time to load.
+    """
+    try:
+        res = requests.get('http://localhost:5000/balance', params =
+        {'address':"rqH1SmqNBqnNojCin9fI4BdFHN/KsazIj/xasjZK6i1iFi03AApkKtQXzm61lUA6TMCvfbKg7+ylLkYvKZMfMg=="})
+        # print(str(res))
+        parsed = json.loads(res.text)
+        print('balance: ' + (json.dumps(parsed, indent=4, sort_keys=True)))
     except requests.ConnectionError:
         print('Connection error. Make sure that you have run miner.py in another terminal.')
 
