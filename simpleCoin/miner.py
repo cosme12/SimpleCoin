@@ -103,6 +103,7 @@ def mine(a, blockchain, node_pending_transactions):
         In order to prevent too many coins to be created, the process
         is slowed down by a proof of work algorithm.
         """
+        print('start of mining sequence')
         # Get the last proof of work
         last_block = BLOCKCHAIN[-1]
         last_proof = last_block.data['proof-of-work']
@@ -113,8 +114,10 @@ def mine(a, blockchain, node_pending_transactions):
         if not proof[0]:
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
+            print(proof)
             a.send(BLOCKCHAIN)
-            continue
+            proof[0] = True
+            miner_process.start()
         else:
             # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
@@ -150,13 +153,16 @@ def mine(a, blockchain, node_pending_transactions):
             requests.get(url = MINER_NODE_URL + '/blocks', params = {'update':MINER_ADDRESS})
 
 def find_new_chains():
+    print('finding chains....')
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
+        # print('checking: ' + node_url)
         # Get their chains using a GET request
         block = requests.get(url = node_url + "/blocks").content
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
+        # print(len(block))
         # Verify other node block is correct
         validated = validate_blockchain(block)
         if validated:
@@ -168,20 +174,20 @@ def find_new_chains():
 def consensus(blockchain):
     # Get the blocks from other nodes
     other_chains = find_new_chains()
+    # print(other_chains)
     # If our chain isn't longest, then we store the longest chain
     BLOCKCHAIN = blockchain
-    longest_chain = BLOCKCHAIN
+    my_chain = BLOCKCHAIN
+    longest_chain = {}
     for chain in other_chains:
-        if len(longest_chain) < len(chain):
+        if len(my_chain) < len(chain):
             longest_chain = chain
-    # If the longest chain wasn't ours, then we set our chain to the longest
-    if longest_chain == BLOCKCHAIN:
-        # Keep searching for proof
-        return False
-    else:
-        # Give up searching proof, update chain and start over again
-        BLOCKCHAIN = longest_chain
-        return BLOCKCHAIN
+            print('longer chain found')
+        else:
+            longest_chain = my_chain
+
+    BLOCKCHAIN = longest_chain
+    return BLOCKCHAIN
 
 
 def validate_blockchain(block):
