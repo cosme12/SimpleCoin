@@ -6,6 +6,7 @@ import base64
 from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
+import pprint
 
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
@@ -66,24 +67,13 @@ NODE_PENDING_TRANSACTIONS = []
 
 
 def proof_of_work(last_proof, blockchain):
-    new_proof = 1
-    check_proof = False
-    counter = 0
     # Creates a variable that we will use to find our next proof of work
     incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 7919
     # and the proof of work of the previous block in the chain
     start_time = time.time()
-    while check_proof is False:
-        hash_operation = hashlib.sha256(
-            str(new_proof ** 6 - last_proof ** 6).encode()).hexdigest()
-        #print(hash_operation)
-        if hash_operation[:5] == '00000':
-            check_proof = True
-            print('total hashes: ' + str(counter))
-        else:
-            new_proof += 1
-            counter += 1
+    while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
+        incrementer += 1
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
             # If any other node got the proof, stop searching
@@ -92,7 +82,7 @@ def proof_of_work(last_proof, blockchain):
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
-    return new_proof, blockchain
+    return incrementer, blockchain
 
 
 def mine(a, blockchain, node_pending_transactions):
@@ -103,21 +93,21 @@ def mine(a, blockchain, node_pending_transactions):
         In order to prevent too many coins to be created, the process
         is slowed down by a proof of work algorithm.
         """
-        print('start of mining sequence')
         # Get the last proof of work
         last_block = BLOCKCHAIN[-1]
+        print(last_block.data)
         last_proof = last_block.data['proof-of-work']
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
         proof = proof_of_work(last_proof, BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
         if not proof[0]:
+            print('not proof')
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
-            print(proof)
+            print(BLOCKCHAIN)
             a.send(BLOCKCHAIN)
-            proof[0] = True
-            miner_process.start()
+            continue
         else:
             # Once we find a valid proof of work, we know we can mine a block so
             # ...we reward the miner by adding a transaction
@@ -153,16 +143,14 @@ def mine(a, blockchain, node_pending_transactions):
             requests.get(url = MINER_NODE_URL + '/blocks', params = {'update':MINER_ADDRESS})
 
 def find_new_chains():
-    print('finding chains....')
     # Get the blockchains of every other node
     other_chains = []
     for node_url in PEER_NODES:
-        # print('checking: ' + node_url)
         # Get their chains using a GET request
-        block = requests.get(url = node_url + "/blocks").content
+        block = requests.get(url=node_url + "/blocks").content
+        print(block)
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
-        # print(len(block))
         # Verify other node block is correct
         validated = validate_blockchain(block)
         if validated:
@@ -174,20 +162,20 @@ def find_new_chains():
 def consensus(blockchain):
     # Get the blocks from other nodes
     other_chains = find_new_chains()
-    # print(other_chains)
     # If our chain isn't longest, then we store the longest chain
     BLOCKCHAIN = blockchain
-    my_chain = BLOCKCHAIN
-    longest_chain = {}
+    longest_chain = BLOCKCHAIN
     for chain in other_chains:
-        if len(my_chain) < len(chain):
+        if len(longest_chain) < len(chain):
             longest_chain = chain
-            print('longer chain found')
-        else:
-            longest_chain = my_chain
-
-    BLOCKCHAIN = longest_chain
-    return BLOCKCHAIN
+    # If the longest chain wasn't ours, then we set our chain to the longest
+    if longest_chain == BLOCKCHAIN:
+        # Keep searching for proof
+        return False
+    else:
+        # Give up searching proof, update chain and start over again
+        BLOCKCHAIN = longest_chain
+        return BLOCKCHAIN
 
 
 def validate_blockchain(block):
@@ -253,25 +241,19 @@ def transaction():
     if request.method == 'POST':
         # On each new POST request, we extract the transaction data
         new_txion = request.get_json()
-        balance = requests.get(url=MINER_NODE_URL + '/balance', params={'address': new_txion['from']})
-        parsed = json.loads(balance.text)
-        int_balance = int(json.dumps(parsed))
         # Then we add the transaction to our list
-        if int_balance >= int(new_txion['amount']):
-            if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
-                NODE_PENDING_TRANSACTIONS.append(new_txion)
-                # Because the transaction was successfully
-                # submitted, we log it to our console
-                print("New transaction")
-                print("FROM: {0}".format(new_txion['from']))
-                print("TO: {0}".format(new_txion['to']))
-                print("AMOUNT: {0}\n".format(new_txion['amount']))
-                # Then we let the client know it worked out
-                return "Transaction submission successful\n"
-            else:
-                return "Transaction submission failed. Wrong signature\n"
+        if validate_signature(new_txion['from'], new_txion['signature'], new_txion['message']):
+            NODE_PENDING_TRANSACTIONS.append(new_txion)
+            # Because the transaction was successfully
+            # submitted, we log it to our console
+            print("New transaction")
+            print("FROM: {0}".format(new_txion['from']))
+            print("TO: {0}".format(new_txion['to']))
+            print("AMOUNT: {0}\n".format(new_txion['amount']))
+            # Then we let the client know it worked out
+            return "Transaction submission successful\n"
         else:
-            return "Transaction submission failed. Insufficient Funds.\n"
+            return "Transaction submission failed. Wrong signature\n"
     # Send pending transactions to the mining process
     elif request.method == 'GET' and request.args.get("update") == MINER_ADDRESS:
         pending = json.dumps(NODE_PENDING_TRANSACTIONS, sort_keys=True)
@@ -293,7 +275,6 @@ def validate_signature(public_key, signature, message):
         return vk.verify(signature, message.encode())
     except:
         return False
-
 
 def welcome_msg():
     print("""       =========================================\n
