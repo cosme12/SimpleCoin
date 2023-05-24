@@ -6,6 +6,7 @@ import base64
 from flask import Flask, request
 from multiprocessing import Process, Pipe
 import ecdsa
+import pprint
 
 from miner_config import MINER_ADDRESS, MINER_NODE_URL, PEER_NODES
 
@@ -63,24 +64,29 @@ it will get accepted, but there is a chance it gets
 discarded and your transaction goes back as if it was never
 processed"""
 NODE_PENDING_TRANSACTIONS = []
-
+start_time = time.time()
 
 def proof_of_work(last_proof, blockchain):
     # Creates a variable that we will use to find our next proof of work
     incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 7919
     # and the proof of work of the previous block in the chain
-    start_time = time.time()
+    # start_time = time.time()
+    print(int((time.time()-start_time) % 60))
     while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
+        # print('work')
         incrementer += 1
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
+            # print('check')
+
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
+    print(incrementer)
     return incrementer, blockchain
 
 
@@ -143,7 +149,8 @@ def find_new_chains():
     other_chains = []
     for node_url in PEER_NODES:
         # Get their chains using a GET request
-        block = requests.get(url = node_url + "/blocks").content
+        block = requests.get(url=node_url + "/blocks").content
+        # print(block)
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
         # Verify other node block is correct
@@ -191,9 +198,9 @@ def get_blocks():
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
-            "index": str(block.index),
-            "timestamp": str(block.timestamp),
-            "data": str(block.data),
+            "index": block.index,
+            "timestamp": block.timestamp,
+            "data": block.data,
             "hash": block.hash
         }
         chain_to_send_json.append(block)
@@ -201,6 +208,30 @@ def get_blocks():
     # Send our chain to whomever requested it
     chain_to_send = json.dumps(chain_to_send_json, sort_keys=True)
     return chain_to_send
+
+
+@node.route('/balance', methods=['GET'])
+def get_balance():
+    address = request.args.get("address")
+    global BLOCKCHAIN
+    chain_to_send = BLOCKCHAIN
+    transaction_history = []
+    c_counter = 0
+    d_counter = 0
+    for block in chain_to_send:
+        y = block.data
+        transaction_history.append(y["transactions"])
+    for x in transaction_history:
+        if x is not None:
+            for y in x:
+                # print(y['to'])
+                if y['to'] == address:
+                    c_counter = c_counter + y['amount']
+                if y['from'] == address:
+                    d_counter = d_counter + int(y['amount'])
+
+    balance = c_counter - d_counter
+    return str(balance)
 
 
 @node.route('/txion', methods=['GET', 'POST'])
@@ -246,7 +277,6 @@ def validate_signature(public_key, signature, message):
         return vk.verify(signature, message.encode())
     except:
         return False
-
 
 def welcome_msg():
     print("""       =========================================\n
