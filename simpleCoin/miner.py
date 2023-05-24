@@ -64,24 +64,29 @@ it will get accepted, but there is a chance it gets
 discarded and your transaction goes back as if it was never
 processed"""
 NODE_PENDING_TRANSACTIONS = []
-
+start_time = time.time()
 
 def proof_of_work(last_proof, blockchain):
     # Creates a variable that we will use to find our next proof of work
     incrementer = last_proof + 1
     # Keep incrementing the incrementer until it's equal to a number divisible by 7919
     # and the proof of work of the previous block in the chain
-    start_time = time.time()
+    # start_time = time.time()
+    print(int((time.time()-start_time) % 60))
     while not (incrementer % 7919 == 0 and incrementer % last_proof == 0):
+        # print('work')
         incrementer += 1
         # Check if any node found the solution every 60 seconds
         if int((time.time()-start_time) % 60) == 0:
+            # print('check')
+
             # If any other node got the proof, stop searching
             new_blockchain = consensus(blockchain)
             if new_blockchain:
                 # (False: another node got proof first, new blockchain)
                 return False, new_blockchain
     # Once that number is found, we can return it as a proof of our work
+    print(incrementer)
     return incrementer, blockchain
 
 
@@ -95,17 +100,14 @@ def mine(a, blockchain, node_pending_transactions):
         """
         # Get the last proof of work
         last_block = BLOCKCHAIN[-1]
-        print(last_block.data)
         last_proof = last_block.data['proof-of-work']
         # Find the proof of work for the current block being mined
         # Note: The program will hang here until a new proof of work is found
         proof = proof_of_work(last_proof, BLOCKCHAIN)
         # If we didn't guess the proof, start mining again
         if not proof[0]:
-            print('not proof')
             # Update blockchain and save it to file
             BLOCKCHAIN = proof[1]
-            print(BLOCKCHAIN)
             a.send(BLOCKCHAIN)
             continue
         else:
@@ -148,7 +150,7 @@ def find_new_chains():
     for node_url in PEER_NODES:
         # Get their chains using a GET request
         block = requests.get(url=node_url + "/blocks").content
-        print(block)
+        # print(block)
         # Convert the JSON object to a Python dictionary
         block = json.loads(block)
         # Verify other node block is correct
@@ -196,9 +198,9 @@ def get_blocks():
     chain_to_send_json = []
     for block in chain_to_send:
         block = {
-            "index": str(block.index),
-            "timestamp": str(block.timestamp),
-            "data": str(block.data),
+            "index": block.index,
+            "timestamp": block.timestamp,
+            "data": block.data,
             "hash": block.hash
         }
         chain_to_send_json.append(block)
