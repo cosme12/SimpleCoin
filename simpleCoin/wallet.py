@@ -19,6 +19,7 @@ node_pending_transactions list to avoid it get processed more than 1 time.
 """
 
 import base64
+import hashlib
 import time
 
 import ecdsa
@@ -114,14 +115,31 @@ def generate_ECDSA_keys():
     private_key = sk.to_string().hex()  # convert your private key to hex
     vk = sk.get_verifying_key()  # this is your verification key (public key)
     public_key = vk.to_string().hex()
+
     # we are going to encode the public key to make it shorter
-    public_key = base64.b64encode(bytes.fromhex(public_key))
+    # public_key = base64.b64encode(bytes.fromhex(public_key))
+
+    # lets create an address from our public key that is easily readable and helps set apart for which chain
+    # our address is for.
+    prefix = "Sc1"  # a short identifier that will go at the beginning of the address
+    addr = public_key[
+        :38
+    ]  # take the first 38 bytes of the public key and use that for the "meat" of the address
+    checksum = (
+        base64.b64encode(addr.encode())[:4].decode().lower()
+    )  # create a checksum to validate the authenticity of this address
+
+    full_address = (
+        f"{prefix}{addr}{checksum}"  # put all the parts together for a complete address
+    )
+
+    print(f"Generated address: {full_address}. Length: {len(full_address)}")
 
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
         f.write(
-            "Private key: {0}\nWallet address / Public key: {1}".format(
-                private_key, public_key.decode()
+            "Private key: {0}\nPublic key: {1}\nWallet address: {2}".format(
+                private_key, public_key, full_address
             )
         )
     print("Your new address and private key are now in the file {0}".format(filename))
