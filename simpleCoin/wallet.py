@@ -18,24 +18,29 @@ transaction with same timestamp was added, they should remove it from the
 node_pending_transactions list to avoid it get processed more than 1 time.
 """
 
-import requests
-import time
 import base64
+import time
+
 import ecdsa
+import requests
 
 
 def wallet():
     response = None
     while response not in ["1", "2", "3"]:
-        response = input("""What do you want to do?
+        response = input(
+            """What do you want to do?
         1. Generate new wallet
         2. Send coins to another wallet
-        3. Check transactions\n""")
+        3. Check transactions\n"""
+        )
     if response == "1":
         # Generate new wallet
-        print("""=========================================\n
+        print(
+            """=========================================\n
 IMPORTANT: save this credentials or you won't be able to recover your wallet\n
-=========================================\n""")
+=========================================\n"""
+        )
         generate_ECDSA_keys()
     elif response == "2":
         addr_from = input("From: introduce your wallet address (public key)\n")
@@ -44,7 +49,11 @@ IMPORTANT: save this credentials or you won't be able to recover your wallet\n
         amount = input("Amount: number stating how much do you want to send\n")
         print("=========================================\n\n")
         print("Is everything correct?\n")
-        print("From: {0}\nPrivate Key: {1}\nTo: {2}\nAmount: {3}\n".format(addr_from, private_key, addr_to, amount))
+        print(
+            "From: {0}\nPrivate Key: {1}\nTo: {2}\nAmount: {3}\n".format(
+                addr_from, private_key, addr_to, amount
+            )
+        )
         response = input("y/n\n")
         if response.lower() == "y":
             send_transaction(addr_from, private_key, addr_to, amount)
@@ -67,12 +76,14 @@ def send_transaction(addr_from, private_key, addr_to, amount):
 
     if len(private_key) == 64:
         signature, message = sign_ECDSA_msg(private_key)
-        url = 'http://localhost:5000/txion'
-        payload = {"from": addr_from,
-                   "to": addr_to,
-                   "amount": amount,
-                   "signature": signature.decode(),
-                   "message": message}
+        url = "http://localhost:5000/txion"
+        payload = {
+            "from": addr_from,
+            "to": addr_to,
+            "amount": amount,
+            "signature": signature.decode(),
+            "message": message,
+        }
         headers = {"Content-Type": "application/json"}
 
         res = requests.post(url, json=payload, headers=headers)
@@ -85,7 +96,7 @@ def check_transactions():
     """Retrieve the entire blockchain. With this you can check your
     wallets balance. If the blockchain is to long, it may take some time to load.
     """
-    res = requests.get('http://localhost:5000/blocks')
+    res = requests.get("http://localhost:5000/blocks")
     print(res.text)
 
 
@@ -97,17 +108,24 @@ def generate_ECDSA_keys():
     private_key: str
     public_ley: base64 (to make it shorter)
     """
-    sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1) #this is your sign (private key)
-    private_key = sk.to_string().hex() #convert your private key to hex
-    vk = sk.get_verifying_key() #this is your verification key (public key)
+    sk = ecdsa.SigningKey.generate(
+        curve=ecdsa.SECP256k1
+    )  # this is your sign (private key)
+    private_key = sk.to_string().hex()  # convert your private key to hex
+    vk = sk.get_verifying_key()  # this is your verification key (public key)
     public_key = vk.to_string().hex()
-    #we are going to encode the public key to make it shorter
+    # we are going to encode the public key to make it shorter
     public_key = base64.b64encode(bytes.fromhex(public_key))
 
     filename = input("Write the name of your new address: ") + ".txt"
     with open(filename, "w") as f:
-        f.write("Private key: {0}\nWallet address / Public key: {1}".format(private_key, public_key.decode()))
+        f.write(
+            "Private key: {0}\nWallet address / Public key: {1}".format(
+                private_key, public_key.decode()
+            )
+        )
     print("Your new address and private key are now in the file {0}".format(filename))
+
 
 def sign_ECDSA_msg(private_key):
     """Sign the message to be sent
@@ -125,12 +143,14 @@ def sign_ECDSA_msg(private_key):
     return signature, message
 
 
-if __name__ == '__main__':
-    print("""       =========================================\n
+if __name__ == "__main__":
+    print(
+        """       =========================================\n
         SIMPLE COIN v1.0.0 - BLOCKCHAIN SYSTEM\n
        =========================================\n\n
         You can find more help at: https://github.com/cosme12/SimpleCoin\n
         Make sure you are using the latest version or you may end in
-        a parallel chain.\n\n\n""")
+        a parallel chain.\n\n\n"""
+    )
     wallet()
     input("Press ENTER to exit...")
